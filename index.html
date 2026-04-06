@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>מרדכי קליקר</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* BRAINROT THEME */
+        body {
+            /* Crazy neon animated gradient background */
+            background: linear-gradient(45deg, #ff00ff, #00ffff, #ff0000, #ffff00);
+            background-size: 400% 400%;
+            animation: brainrotBg 5s ease infinite;
+            color: #ffffff;
+            overflow: hidden;
+            font-family: 'Comic Sans MS', 'Chalkboard SE', 'Comic Neue', sans-serif;
+        }
+
+        @keyframes brainrotBg {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        /* Click effects */
+        .click-text {
+            position: absolute;
+            font-size: 2rem;
+            font-weight: 900;
+            color: #39FF14;
+            text-shadow: 2px 2px 0 #000, -2px -2px 0 #000, 2px -2px 0 #000, -2px 2px 0 #000;
+            pointer-events: none;
+            animation: floatUpBrainrot 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+            z-index: 50;
+        }
+
+        .click-img {
+            position: absolute;
+            width: 50px;
+            height: 50px;
+            border-radius: 20%;
+            pointer-events: none;
+            box-shadow: 0 0 15px #fff;
+            animation: spinUpImg 1s linear forwards;
+            z-index: 40;
+        }
+
+        @keyframes floatUpBrainrot {
+            0% { transform: translateY(0) scale(0.5) rotate(-10deg); opacity: 1; }
+            50% { transform: translateY(-50px) scale(1.5) rotate(10deg); opacity: 1; }
+            100% { transform: translateY(-150px) scale(2) rotate(-20deg); opacity: 0; }
+        }
+
+        @keyframes spinUpImg {
+            0% { transform: translateY(0) rotate(0deg) scale(1); opacity: 1; }
+            100% { transform: translateY(-100px) rotate(720deg) scale(0); opacity: 0; }
+        }
+
+        /* Mordechai Button */
+        #mordechai-btn {
+            transition: all 0.1s;
+            user-select: none;
+            -webkit-user-drag: none;
+        }
+        #mordechai-btn:active {
+            transform: scale(0.8) rotate(15deg);
+            filter: hue-rotate(90deg) contrast(200%);
+        }
+
+        /* Crazy Upgrade specific styles */
+        .crazy-upgrade {
+            animation: epilepsyBg 0.2s infinite alternate, shake 0.1s infinite;
+            border: 5px dashed #fff !important;
+        }
+        
+        .crazy-text {
+            font-size: 1.5rem !important;
+            font-weight: 900;
+            background: linear-gradient(to right, #ff0000, #ff7f00, #ffff00, #00ff00, #0000ff, #4b0082, #8b00ff);
+            -webkit-background-clip: text;
+            color: transparent;
+            animation: rainbow 0.5s linear infinite;
+            text-transform: uppercase;
+        }
+
+        @keyframes epilepsyBg {
+            0% { background-color: #ff0000; }
+            25% { background-color: #00ff00; }
+            50% { background-color: #0000ff; }
+            75% { background-color: #ff00ff; }
+            100% { background-color: #ffff00; }
+        }
+
+        @keyframes shake {
+            0% { transform: translate(2px, 2px) rotate(0deg); }
+            25% { transform: translate(-2px, -2px) rotate(-2deg); }
+            50% { transform: translate(-4px, 0px) rotate(2deg); }
+            75% { transform: translate(4px, 2px) rotate(0deg); }
+            100% { transform: translate(2px, -2px) rotate(-2deg); }
+        }
+
+        @keyframes rainbow {
+            to { background-position: 400vh; }
+        }
+
+        /* UI Elements styling */
+        .neon-box {
+            background: rgba(0, 0, 0, 0.7);
+            border: 4px solid #39FF14;
+            box-shadow: 0 0 10px #39FF14, inset 0 0 10px #39FF14;
+        }
+
+        ::-webkit-scrollbar { width: 10px; }
+        ::-webkit-scrollbar-track { background: #111; }
+        ::-webkit-scrollbar-thumb { background: #ff00ff; border-radius: 5px; border: 2px solid #00ffff; }
+        ::-webkit-scrollbar-thumb:hover { background: #00ffff; }
+    </style>
+</head>
+<body class="flex h-screen w-screen m-0 flex-col md:flex-row">
+
+    <!-- Main Game Area -->
+    <div class="w-full md:w-2/3 flex flex-col items-center justify-center relative p-4">
+        
+        <!-- Titles -->
+        <h1 class="text-5xl md:text-7xl font-black mb-4 text-center tracking-widest uppercase drop-shadow-[0_5px_5px_rgba(0,0,0,1)]" style="-webkit-text-stroke: 2px black;">
+            מרדכי קליקר
+        </h1>
+        
+        <div class="neon-box px-8 py-6 rounded-3xl text-center mb-8 transform -rotate-2 hover:rotate-2 transition-transform">
+            <div class="text-6xl font-black text-[#00FFFF] drop-shadow-[0_0_10px_#00FFFF] mb-2">
+                <span id="shora-display">0</span> שורה
+            </div>
+            <div class="text-2xl text-[#FF00FF] font-black tracking-widest drop-shadow-[0_0_5px_#FF00FF]">
+                <span id="sps-display">0</span> שורה לשנייה
+            </div>
+        </div>
+
+        <!-- Mordechai -->
+        <div class="relative cursor-pointer group" id="mordechai-container">
+            <img 
+                id="mordechai-btn" 
+                src="mordechai.png" 
+                alt="Mordechai" 
+                class="w-64 h-64 md:w-80 md:h-80 object-cover rounded-[40px] border-8 border-[#FF00FF] shadow-[0_0_100px_#FF00FF] group-hover:border-[#00FFFF] group-hover:shadow-[0_0_100px_#00FFFF]"
+                onerror="this.src='data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0MDAiIGhlaWdodD0iNDAwIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjRkYwMEZGIi8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtc2l6ZT0iNDBweCIgZmlsbD0iI0ZGRiIgZGVtaS1ib2xkPSJ0cnVlIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBkeT0iLjNlbSI+Tk8gSU1BR0UgTCA8L3RleHQ+PC9zdmc+'">
+        </div>
+
+    </div>
+
+    <!-- Shora Farms / Upgrades -->
+    <div class="w-full md:w-1/3 bg-black/80 flex flex-col border-r-8 md:border-r-0 md:border-l-8 border-[#00FFFF] shadow-[0_0_30px_#00FFFF] relative z-10">
+        <div class="p-6 bg-black border-b-4 border-[#FF00FF] text-center">
+            <h2 class="text-3xl font-black text-[#39FF14] drop-shadow-[0_0_5px_#39FF14]">שורה פארמס ושדרוגים</h2>
+            <p class="text-md text-white mt-2 font-bold">קנה שדרוגים ללחיצות או שורה פארמס בשביל אוטומציה</p>
+        </div>
+        
+        <div id="shop-container" class="flex-1 overflow-y-auto p-4 pb-10">
+            <!-- אזור שדרוגי לחיצה -->
+            <div class="mb-8">
+                <h3 class="text-2xl font-bold text-[#FF00FF] mb-3 border-b-2 border-[#FF00FF] pb-1 uppercase tracking-wider">שדרוגי לחיצה (קליקים)</h3>
+                <div id="upgrades-container" class="space-y-4"></div>
+            </div>
+            
+            <!-- אזור שורה פארמס -->
+            <div>
+                <h3 class="text-2xl font-bold text-[#00FFFF] mb-3 border-b-2 border-[#00FFFF] pb-1 uppercase tracking-wider">שורה פארמס (אוטומטי)</h3>
+                <div id="buildings-container" class="space-y-4"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- Game State ---
+        let shora = 0;
+        let shoraPerSecond = 0;
+        let shoraPerClick = 1;
+
+        // --- Click Upgrades Data ---
+        const clickUpgrades = [
+            {
+                id: 'cheap_mouse',
+                name: 'real stats',
+                baseCost: 50,
+                cost: 50,
+                boost: 1, 
+                count: 0,
+                desc: 'הפעם הנתונים אמיתיים לא כמו ה-fake stats (+1 לקליק).'
+            },
+            {
+                id: 'speedrunner',
+                name: 'המונסטר של רגב',
+                baseCost: 500,
+                cost: 500,
+                boost: 10, 
+                count: 0,
+                desc: 'שותה מונסטר ולוחץ כמו משוגע (+10 לקליק).'
+            },
+            {
+                id: 'sigma_glove',
+                name: 'ניר בנדה',
+                baseCost: 5000,
+                cost: 5000,
+                boost: 100, 
+                count: 0,
+                desc: 'הכל עובר ל7 (+100 לקליק).'
+            }
+        ];
+
+        // --- Buildings Data ---
+        const buildings = [
+            {
+                id: 'fake_stats',
+                name: 'fake stats', // ONLY THIS IN ENGLISH
+                baseCost: 15,
+                cost: 15,
+                sps: 1, 
+                count: 0,
+                desc: 'מזייף קצת נתוני התפלגות נורמלית כדי לייצר שורה מכלום.',
+                crazy: false
+            },
+            {
+                id: 'aviv_cenzor',
+                name: 'אביב צנזור',
+                baseCost: 100,
+                cost: 100,
+                sps: 5,
+                count: 0,
+                desc: 'תהי פונקציית שורה f(x). נוכיח באינדוקציה שמרדכי חסום.',
+                crazy: false
+            },
+            {
+                id: 'door',
+                name: 'דלת',
+                baseCost: 1100,
+                cost: 1100,
+                sps: 50,
+                count: 0,
+                desc: 'פשוט דלת. לא צריך להסביר יותר.',
+                crazy: false
+            },
+            {
+                id: 'mordemet',
+                name: 'מרדמת',
+                baseCost: 12000,
+                cost: 12000,
+                sps: 400,
+                count: 0,
+                desc: 'מרדכי ישן? או שמא הוא מת? העיקר שמייצר שורה.',
+                crazy: false
+            },
+            {
+                id: 'who_is',
+                name: 'מי זה מרדכי?!?!?!?!?!?!?',
+                baseCost: 100000,
+                cost: 100000,
+                sps: 5000,
+                count: 0,
+                desc: 'קריסה מוחלטת של משוואות דיפרנציאליות לתוך חור שחור של שורה.',
+                crazy: true 
+            }
+        ];
+
+        // DOM Elements
+        const shoraDisplay = document.getElementById('shora-display');
+        const spsDisplay = document.getElementById('sps-display');
+        const mordechaiBtn = document.getElementById('mordechai-btn');
+        const shopContainer = document.getElementById('shop-container');
+        const upgradesContainer = document.getElementById('upgrades-container');
+        const buildingsContainer = document.getElementById('buildings-container');
+
+        function initGame() {
+            loadGame();
+            renderShop();
+            updateDisplay();
+            
+            setInterval(() => {
+                shora += shoraPerSecond / 10;
+                updateDisplay();
+            }, 100);
+
+            setInterval(saveGame, 5000); // Save faster because we grindin
+        }
+
+        function updateDisplay() {
+            shoraDisplay.innerText = Math.floor(shora).toLocaleString('en-US');
+            spsDisplay.innerText = shoraPerSecond.toLocaleString('en-US');
+            
+            buildings.forEach(building => {
+                const btn = document.getElementById(`buy-btn-${building.id}`);
+                const container = document.getElementById(`building-${building.id}`);
+                if (btn && container) {
+                    if (shora >= building.cost) {
+                        btn.disabled = false;
+                        container.classList.remove('opacity-50', 'grayscale');
+                        btn.classList.remove('bg-gray-700', 'text-gray-400');
+                        
+                        if (building.crazy) {
+                            btn.classList.add('bg-black', 'text-white', 'border-2', 'border-white');
+                        } else {
+                            btn.classList.add('bg-[#39FF14]', 'text-black', 'hover:bg-white', 'hover:scale-105');
+                        }
+                    } else {
+                        btn.disabled = true;
+                        container.classList.add('opacity-50', 'grayscale');
+                        btn.classList.remove('bg-[#39FF14]', 'text-black', 'hover:bg-white', 'hover:scale-105', 'bg-black', 'text-white');
+                        btn.classList.add('bg-gray-700', 'text-gray-400');
+                    }
+                }
+            });
+
+            // עדכון שדרוגי לחיצה
+            clickUpgrades.forEach(upgrade => {
+                const btn = document.getElementById(`buy-upgrade-btn-${upgrade.id}`);
+                const container = document.getElementById(`upgrade-${upgrade.id}`);
+                if (btn && container) {
+                    if (shora >= upgrade.cost) {
+                        btn.disabled = false;
+                        container.classList.remove('opacity-50', 'grayscale');
+                        btn.classList.remove('bg-gray-700', 'text-gray-400');
+                        btn.classList.add('bg-[#FF00FF]', 'text-white', 'hover:bg-white', 'hover:text-[#FF00FF]', 'hover:scale-105');
+                    } else {
+                        btn.disabled = true;
+                        container.classList.add('opacity-50', 'grayscale');
+                        btn.classList.remove('bg-[#FF00FF]', 'text-white', 'hover:bg-white', 'hover:text-[#FF00FF]', 'hover:scale-105');
+                        btn.classList.add('bg-gray-700', 'text-gray-400');
+                    }
+                }
+            });
+        }
+
+        mordechaiBtn.addEventListener('mousedown', (e) => {
+            shora += shoraPerClick;
+            updateDisplay();
+
+            createClickParticle(e.clientX, e.clientY);
+            createMordechaiParticle(e.clientX, e.clientY);
+        });
+
+        function createClickParticle(x, y) {
+            const particle = document.createElement('div');
+            particle.classList.add('click-text');
+            
+            // מציג רק את המספר בלי אימוג'ים של שלדים וכו'
+            particle.innerText = `+${shoraPerClick}`;
+            
+            const offsetX = (Math.random() - 0.5) * 100;
+            const offsetY = (Math.random() - 0.5) * 100;
+            
+            particle.style.left = `${x + offsetX}px`;
+            particle.style.top = `${y - 40 + offsetY}px`;
+            
+            document.body.appendChild(particle);
+            
+            setTimeout(() => { particle.remove(); }, 800);
+        }
+
+        function createMordechaiParticle(x, y) {
+            const img = document.createElement('img');
+            img.src = 'mordechai.png';
+            img.classList.add('click-img');
+            
+            img.onerror = function() {
+                this.src = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0MCIgaGVpZ2h0PSI0MCI+PGNpcmNsZSBjeD0iMjAiIGN5PSIyMCIgcj0iMjAiIGZpbGw9IiNGRjAwRkYiLz48L3N2Zz4=';
+            };
+
+            const offsetX = (Math.random() - 0.5) * 100;
+            const offsetY = (Math.random() - 0.5) * 100;
+            
+            img.style.left = `${x - 25 + offsetX}px`;
+            img.style.top = `${y - 25 + offsetY}px`;
+            
+            document.body.appendChild(img);
+            
+            setTimeout(() => { img.remove(); }, 1000);
+        }
+
+        function renderShop() {
+            upgradesContainer.innerHTML = '';
+            buildingsContainer.innerHTML = '';
+            
+            // רינדור שדרוגי לחיצה
+            clickUpgrades.forEach((upgrade, index) => {
+                const uDiv = document.createElement('div');
+                uDiv.id = `upgrade-${upgrade.id}`;
+                
+                uDiv.className = `bg-[#222] rounded-2xl p-4 flex flex-col gap-2 transition-all duration-200 border-2 border-[#FF00FF]`;
+                
+                uDiv.innerHTML = `
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <div class="text-xl font-black text-white">${upgrade.name}</div>
+                            <div class="text-sm font-bold text-[#FF00FF]">+${upgrade.boost.toLocaleString('en-US')} לקליק</div>
+                        </div>
+                        <div class="text-4xl font-black text-white bg-black/50 border-2 border-[#FF00FF] px-3 py-1 rounded-xl shadow-[0_0_10px_#FF00FF]">${upgrade.count}</div>
+                    </div>
+                    <div class="text-sm font-bold text-gray-300 min-h-[2.5rem] italic">"${upgrade.desc}"</div>
+                    <button id="buy-upgrade-btn-${upgrade.id}" onclick="buyClickUpgrade(${index})" class="mt-2 w-full py-3 rounded-xl font-black transition-all duration-100 flex justify-between px-4 items-center uppercase">
+                        <span>קנה שדרוג קליק</span>
+                        <span class="bg-black text-[#00FFFF] px-2 py-1 rounded border border-[#00FFFF]" dir="ltr">${Math.floor(upgrade.cost).toLocaleString('en-US')} שורה</span>
+                    </button>
+                `;
+                
+                upgradesContainer.appendChild(uDiv);
+            });
+
+            // רינדור שורה פארמס
+            buildings.forEach((building, index) => {
+                const bDiv = document.createElement('div');
+                bDiv.id = `building-${building.id}`;
+                
+                let crazyClasses = "";
+                let nameClasses = "text-xl font-black text-white";
+                let bgClass = "bg-[#222]";
+                let borderClass = "border-2 border-[#00FFFF]";
+
+                if (building.crazy) {
+                    crazyClasses = "crazy-upgrade";
+                    nameClasses = "crazy-text";
+                }
+
+                bDiv.className = `${bgClass} rounded-2xl p-4 flex flex-col gap-2 transition-all duration-200 ${borderClass} ${crazyClasses}`;
+                
+                bDiv.innerHTML = `
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <div class="${nameClasses}">${building.name}</div>
+                            <div class="text-sm font-bold text-[#00FFFF]">+${building.sps.toLocaleString('en-US')} שורה לשנייה</div>
+                        </div>
+                        <div class="text-4xl font-black text-white bg-black/50 border-2 border-white px-3 py-1 rounded-xl shadow-[0_0_10px_white]">${building.count}</div>
+                    </div>
+                    <div class="text-sm font-bold text-gray-300 min-h-[2.5rem] italic">"${building.desc}"</div>
+                    <button id="buy-btn-${building.id}" onclick="buyBuilding(${index})" class="mt-2 w-full py-3 rounded-xl font-black transition-all duration-100 flex justify-between px-4 items-center uppercase">
+                        <span>קנה שורה פארם</span>
+                        <span class="bg-black text-[#FF00FF] px-2 py-1 rounded border border-[#FF00FF]" dir="ltr">${Math.floor(building.cost).toLocaleString('en-US')} שורה</span>
+                    </button>
+                `;
+                
+                buildingsContainer.appendChild(bDiv);
+            });
+        }
+
+        window.buyClickUpgrade = function(index) {
+            const upgrade = clickUpgrades[index];
+            if (shora >= upgrade.cost) {
+                shora -= upgrade.cost;
+                upgrade.count++;
+                
+                // מתייקר פי 1.5 כל פעם
+                upgrade.cost = upgrade.baseCost * Math.pow(1.5, upgrade.count);
+                
+                calculateSPS();
+                renderShop();
+                updateDisplay();
+            }
+        };
+
+        window.buyBuilding = function(index) {
+            const building = buildings[index];
+            if (shora >= building.cost) {
+                shora -= building.cost;
+                building.count++;
+                
+                building.cost = building.baseCost * Math.pow(1.15, building.count);
+                
+                calculateSPS();
+                renderShop();
+                updateDisplay();
+                
+                if(building.crazy) {
+                    document.body.style.animation = "epilepsyBg 0.1s infinite alternate";
+                    setTimeout(() => { document.body.style.animation = "brainrotBg 5s ease infinite"; }, 1000);
+                }
+            }
+        };
+
+        function calculateSPS() {
+            let total = 0;
+            buildings.forEach(b => total += b.sps * b.count);
+            shoraPerSecond = total;
+            
+            // חישוב שורה לכל לחיצה מהשדרוגים
+            let totalClickBoost = 0;
+            clickUpgrades.forEach(u => totalClickBoost += u.boost * u.count);
+            shoraPerClick = 1 + totalClickBoost; 
+        }
+
+        function saveGame() {
+            const saveObj = {
+                shora: shora,
+                buildingsCount: buildings.map(b => b.count),
+                upgradesCount: clickUpgrades.map(u => u.count)
+            };
+            localStorage.setItem('mordechaiSaveBrainrot', JSON.stringify(saveObj)); // New save key
+        }
+
+        function loadGame() {
+            const saveStr = localStorage.getItem('mordechaiSaveBrainrot'); // Load brainrot save
+            if (saveStr) {
+                try {
+                    const saveObj = JSON.parse(saveStr);
+                    shora = saveObj.shora || 0;
+                    
+                    if (saveObj.buildingsCount && saveObj.buildingsCount.length === buildings.length) {
+                        buildings.forEach((b, i) => {
+                            b.count = saveObj.buildingsCount[i];
+                            b.cost = b.baseCost * Math.pow(1.15, b.count);
+                        });
+                    }
+
+                    if (saveObj.upgradesCount && saveObj.upgradesCount.length === clickUpgrades.length) {
+                        clickUpgrades.forEach((u, i) => {
+                            u.count = saveObj.upgradesCount[i];
+                            u.cost = u.baseCost * Math.pow(1.5, u.count);
+                        });
+                    }
+                    
+                    calculateSPS();
+                } catch (e) {
+                    console.error("Save load failed fr fr");
+                }
+            }
+        }
+
+        initGame();
+
+    </script>
+</body>
+</html>
