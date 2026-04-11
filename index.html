@@ -2,19 +2,22 @@
 <html lang="he" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>מרדכי קליקר</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        /* BRAINROT THEME */
+        * { -webkit-tap-highlight-color: transparent; box-sizing: border-box; }
+
         body {
-            /* Crazy neon animated gradient background */
             background: linear-gradient(45deg, #ff00ff, #00ffff, #ff0000, #ffff00);
             background-size: 400% 400%;
             animation: brainrotBg 5s ease infinite;
             color: #ffffff;
-            overflow: hidden;
             font-family: 'Comic Sans MS', 'Chalkboard SE', 'Comic Neue', sans-serif;
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+            overflow-x: hidden;
         }
 
         @keyframes brainrotBg {
@@ -23,507 +26,769 @@
             100% { background-position: 0% 50%; }
         }
 
+        /* ---- LAYOUT: stacked on mobile, side-by-side on md+ ---- */
+        #game-wrapper {
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+        @media (min-width: 768px) {
+            #game-wrapper {
+                flex-direction: row;
+                height: 100vh;
+                overflow: hidden;
+            }
+        }
+
+        /* Main area */
+        #main-area {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem 1rem 0.5rem;
+            position: relative;
+        }
+
+        /* Shop panel */
+        #shop-panel {
+            width: 100%;
+            background: rgba(0,0,0,0.85);
+            border-top: 6px solid #00FFFF;
+            box-shadow: 0 0 30px #00FFFF;
+        }
+        @media (min-width: 768px) {
+            #shop-panel {
+                width: 38%;
+                min-width: 300px;
+                border-top: none;
+                border-left: 8px solid #00FFFF;
+                overflow-y: auto;
+                height: 100vh;
+            }
+        }
+
         /* Click effects */
         .click-text {
-            position: absolute;
-            font-size: 2rem;
+            position: fixed;
+            font-size: 1.8rem;
             font-weight: 900;
             color: #39FF14;
             text-shadow: 2px 2px 0 #000, -2px -2px 0 #000, 2px -2px 0 #000, -2px 2px 0 #000;
             pointer-events: none;
             animation: floatUpBrainrot 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
-            z-index: 50;
+            z-index: 500;
         }
-
         .click-img {
-            position: absolute;
-            width: 50px;
-            height: 50px;
+            position: fixed;
+            width: 45px;
+            height: 45px;
             border-radius: 20%;
             pointer-events: none;
-            box-shadow: 0 0 15px #fff;
             animation: spinUpImg 1s linear forwards;
-            z-index: 40;
+            z-index: 490;
         }
-
         @keyframes floatUpBrainrot {
-            0% { transform: translateY(0) scale(0.5) rotate(-10deg); opacity: 1; }
-            50% { transform: translateY(-50px) scale(1.5) rotate(10deg); opacity: 1; }
-            100% { transform: translateY(-150px) scale(2) rotate(-20deg); opacity: 0; }
+            0%   { transform: translateY(0) scale(0.5) rotate(-10deg); opacity: 1; }
+            50%  { transform: translateY(-50px) scale(1.4) rotate(10deg); opacity: 1; }
+            100% { transform: translateY(-140px) scale(1.8) rotate(-20deg); opacity: 0; }
         }
-
         @keyframes spinUpImg {
-            0% { transform: translateY(0) rotate(0deg) scale(1); opacity: 1; }
+            0%   { transform: translateY(0) rotate(0deg) scale(1); opacity: 1; }
             100% { transform: translateY(-100px) rotate(720deg) scale(0); opacity: 0; }
         }
 
-        /* Mordechai Button */
+        /* Mordechai button */
         #mordechai-btn {
             transition: all 0.1s;
             user-select: none;
             -webkit-user-drag: none;
+            touch-action: manipulation;
+            cursor: pointer;
         }
         #mordechai-btn:active {
-            transform: scale(0.8) rotate(15deg);
+            transform: scale(0.82) rotate(15deg);
             filter: hue-rotate(90deg) contrast(200%);
         }
 
-        /* Crazy Upgrade specific styles */
+        /* Crazy building */
         .crazy-upgrade {
             animation: epilepsyBg 0.2s infinite alternate, shake 0.1s infinite;
             border: 5px dashed #fff !important;
         }
-        
         .crazy-text {
-            font-size: 1.5rem !important;
+            font-size: 1.3rem !important;
             font-weight: 900;
-            background: linear-gradient(to right, #ff0000, #ff7f00, #ffff00, #00ff00, #0000ff, #4b0082, #8b00ff);
+            background: linear-gradient(to right, #ff0000, #ff7f00, #ffff00, #00ff00, #0000ff, #8b00ff);
             -webkit-background-clip: text;
             color: transparent;
             animation: rainbow 0.5s linear infinite;
             text-transform: uppercase;
         }
-
         @keyframes epilepsyBg {
-            0% { background-color: #ff0000; }
-            25% { background-color: #00ff00; }
-            50% { background-color: #0000ff; }
-            75% { background-color: #ff00ff; }
+            0%   { background-color: #ff0000; }
+            25%  { background-color: #00ff00; }
+            50%  { background-color: #0000ff; }
+            75%  { background-color: #ff00ff; }
             100% { background-color: #ffff00; }
         }
-
         @keyframes shake {
-            0% { transform: translate(2px, 2px) rotate(0deg); }
-            25% { transform: translate(-2px, -2px) rotate(-2deg); }
-            50% { transform: translate(-4px, 0px) rotate(2deg); }
-            75% { transform: translate(4px, 2px) rotate(0deg); }
-            100% { transform: translate(2px, -2px) rotate(-2deg); }
+            0%   { transform: translate(2px,2px) rotate(0deg); }
+            25%  { transform: translate(-2px,-2px) rotate(-2deg); }
+            50%  { transform: translate(-4px,0px) rotate(2deg); }
+            75%  { transform: translate(4px,2px) rotate(0deg); }
+            100% { transform: translate(2px,-2px) rotate(-2deg); }
         }
+        @keyframes rainbow { to { background-position: 400vh; } }
 
-        @keyframes rainbow {
-            to { background-position: 400vh; }
-        }
-
-        /* UI Elements styling */
         .neon-box {
-            background: rgba(0, 0, 0, 0.7);
-            border: 4px solid #39FF14;
-            box-shadow: 0 0 10px #39FF14, inset 0 0 10px #39FF14;
+            background: rgba(0,0,0,0.75);
+            border: 3px solid #39FF14;
+            box-shadow: 0 0 10px #39FF14, inset 0 0 8px #39FF14;
         }
 
-        ::-webkit-scrollbar { width: 10px; }
+        /* Scrollbar */
+        ::-webkit-scrollbar { width: 8px; }
         ::-webkit-scrollbar-track { background: #111; }
-        ::-webkit-scrollbar-thumb { background: #ff00ff; border-radius: 5px; border: 2px solid #00ffff; }
+        ::-webkit-scrollbar-thumb { background: #ff00ff; border-radius: 5px; }
         ::-webkit-scrollbar-thumb:hover { background: #00ffff; }
+
+        /* --- REBIRTH MODAL --- */
+        #rebirth-modal {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.88);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+        }
+        #rebirth-modal.show { display: flex; }
+        .rebirth-inner {
+            background: #111;
+            border: 5px solid #FFD700;
+            box-shadow: 0 0 40px #FFD700;
+            border-radius: 20px;
+            padding: 2rem 1.5rem;
+            max-width: 460px;
+            width: 100%;
+            text-align: center;
+            animation: rebirthPulse 1.5s ease-in-out infinite;
+        }
+        @keyframes rebirthPulse {
+            0%,100% { box-shadow: 0 0 40px #FFD700; }
+            50%      { box-shadow: 0 0 90px #FFD700; }
+        }
+        .rebirth-title {
+            font-size: 2.5rem;
+            font-weight: 900;
+            color: #FFD700;
+            text-shadow: 0 0 18px #FFD700;
+            margin-bottom: 0.4rem;
+        }
+        .rebirth-confirm-btn {
+            background: linear-gradient(135deg,#FFD700,#FF8C00);
+            color: #000; font-weight: 900; font-size: 1.2rem;
+            border: none; border-radius: 14px;
+            padding: 0.85rem 2rem; cursor: pointer;
+            transition: transform 0.1s; margin: 0.4rem;
+            font-family: 'Comic Sans MS', sans-serif;
+            touch-action: manipulation;
+        }
+        .rebirth-confirm-btn:active { transform: scale(0.95); }
+        .rebirth-cancel-btn {
+            background: #333; color: #fff; font-weight: 900;
+            font-size: 1rem; border: 2px solid #666;
+            border-radius: 14px; padding: 0.65rem 1.5rem;
+            cursor: pointer; transition: transform 0.1s; margin: 0.4rem;
+            font-family: 'Comic Sans MS', sans-serif;
+            touch-action: manipulation;
+        }
+        .rebirth-cancel-btn:active { transform: scale(0.97); }
+
+        /* Flash */
+        #rebirth-flash {
+            display: none;
+            position: fixed; inset: 0;
+            background: #FFD700;
+            z-index: 2000;
+            pointer-events: none;
+            animation: flashOut 1.2s forwards;
+        }
+        @keyframes flashOut {
+            0%   { opacity: 1; }
+            60%  { opacity: 0.7; }
+            100% { opacity: 0; }
+        }
+
+        /* Rebirth button */
+        #rebirth-btn {
+            background: linear-gradient(135deg,#FFD700,#FF8C00);
+            color: #000; font-weight: 900; border: none;
+            border-radius: 12px; padding: 0.55rem 1.2rem;
+            cursor: pointer; font-family: 'Comic Sans MS', sans-serif;
+            font-size: 0.95rem; transition: all 0.2s;
+            box-shadow: 0 0 14px #FFD700;
+            touch-action: manipulation;
+            white-space: nowrap;
+        }
+        #rebirth-btn.disabled {
+            filter: grayscale(1) brightness(0.45);
+            cursor: not-allowed;
+            box-shadow: none;
+        }
+
+        .prestige-badge {
+            display: inline-block;
+            background: linear-gradient(135deg,#FFD700,#FF8C00);
+            color: #000; font-weight: 900;
+            border-radius: 999px; padding: 2px 12px;
+            font-size: 0.95rem; box-shadow: 0 0 8px #FFD700;
+        }
+
+        /* CHEAT ACTIVE banner */
+        #cheat-banner {
+            display: none;
+            position: fixed; top: 0; left: 0; right: 0;
+            background: linear-gradient(90deg, #ff0000, #ff7700, #ffff00, #ff7700, #ff0000);
+            background-size: 300% 100%;
+            animation: cheatBanner 0.6s linear infinite;
+            color: #000; font-weight: 900; font-size: 1rem;
+            text-align: center; padding: 6px;
+            z-index: 3000; letter-spacing: 2px;
+        }
+        @keyframes cheatBanner {
+            0%   { background-position: 0% 50%; }
+            100% { background-position: 100% 50%; }
+        }
+
+        /* Mobile shop scroll area */
+        #shop-scroll {
+            max-height: 45vh;
+            overflow-y: auto;
+            padding: 0.75rem;
+        }
+        @media (min-width: 768px) {
+            #shop-scroll {
+                max-height: none;
+                height: calc(100vh - 90px);
+                overflow-y: auto;
+                padding: 1rem;
+            }
+        }
+
+        /* Responsive mordechai image */
+        #mordechai-img {
+            width: clamp(140px, 38vw, 280px);
+            height: clamp(140px, 38vw, 280px);
+            object-fit: cover;
+            border-radius: 30px;
+            border: 6px solid #FF00FF;
+            box-shadow: 0 0 60px #FF00FF;
+        }
+
+        /* Stats compact on mobile */
+        .stat-num { font-size: clamp(1.8rem, 8vw, 3.5rem); }
+        .stat-sps { font-size: clamp(1rem, 4vw, 1.5rem); }
+        .game-title { font-size: clamp(1.8rem, 8vw, 4rem); }
     </style>
 </head>
-<body class="flex h-screen w-screen m-0 flex-col md:flex-row">
+<body>
 
-    <!-- Main Game Area -->
-    <div class="w-full md:w-2/3 flex flex-col items-center justify-center relative p-4">
-        
-        <!-- Titles -->
-        <h1 class="text-5xl md:text-7xl font-black mb-4 text-center tracking-widest uppercase drop-shadow-[0_5px_5px_rgba(0,0,0,1)]" style="-webkit-text-stroke: 2px black;">
+<div id="cheat-banner">⚠️ CHEAT MODE ACTIVE — GOD OF SHORA ⚠️</div>
+<div id="rebirth-flash"></div>
+
+<!-- Rebirth Modal -->
+<div id="rebirth-modal">
+    <div class="rebirth-inner">
+        <div class="rebirth-title">🌟 Rebirth!</div>
+        <div style="font-size:1.1rem;color:#fff;margin-bottom:0.8rem;line-height:1.6" id="rebirth-modal-text"></div>
+        <div style="font-size:0.9rem;color:#aaa;margin-bottom:1.2rem" id="rebirth-modal-current"></div>
+        <button class="rebirth-confirm-btn" onclick="confirmRebirth()">✨ Yes! Rebirth!</button>
+        <button class="rebirth-cancel-btn" onclick="closeRebirthModal()">Not yet...</button>
+    </div>
+</div>
+
+<div id="game-wrapper">
+
+    <!-- MAIN AREA -->
+    <div id="main-area">
+        <h1 class="game-title font-black text-center tracking-widest uppercase mb-1" style="-webkit-text-stroke: 2px black; text-stroke: 2px black;">
             מרדכי קליקר
         </h1>
-        
-        <div class="neon-box px-8 py-6 rounded-3xl text-center mb-8 transform -rotate-2 hover:rotate-2 transition-transform">
-            <div class="text-6xl font-black text-[#00FFFF] drop-shadow-[0_0_10px_#00FFFF] mb-2">
+
+        <!-- Rebirth row -->
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:center;margin-bottom:8px;">
+            <span id="prestige-badge-display" class="prestige-badge" style="display:none">★ <span id="prestige-count-display">0</span></span>
+            <button id="rebirth-btn" onclick="openRebirthModal()" class="disabled">🌟 Rebirth</button>
+            <span id="rebirth-requirement-text" style="font-size:0.8rem;color:rgba(255,255,255,0.7);font-weight:bold"></span>
+        </div>
+
+        <!-- Stats box -->
+        <div class="neon-box rounded-2xl text-center mb-4" style="padding:0.75rem 1.5rem;transform:rotate(-1.5deg)">
+            <div class="stat-num font-black text-[#00FFFF]" style="text-shadow:0 0 10px #00FFFF;line-height:1.1">
                 <span id="shora-display">0</span> שורה
             </div>
-            <div class="text-2xl text-[#FF00FF] font-black tracking-widest drop-shadow-[0_0_5px_#FF00FF]">
-                <span id="sps-display">0</span> שורה לשנייה
+            <div class="stat-sps font-black text-[#FF00FF]" style="text-shadow:0 0 5px #FF00FF">
+                <span id="sps-display">0</span> שורה/שנייה
+            </div>
+            <div id="click-multiplier-display" style="display:none;font-size:1rem;color:#FFD700;font-weight:900;margin-top:4px">
+                ×<span id="click-mult-val">1</span> Rebirth Bonus
             </div>
         </div>
 
         <!-- Mordechai -->
-        <div class="relative cursor-pointer group" id="mordechai-container">
-            <img 
-                id="mordechai-btn" 
-                src="mordechai.png" 
-                alt="Mordechai" 
-                class="w-64 h-64 md:w-80 md:h-80 object-cover rounded-[40px] border-8 border-[#FF00FF] shadow-[0_0_100px_#FF00FF] group-hover:border-[#00FFFF] group-hover:shadow-[0_0_100px_#00FFFF]"
-                onerror="this.src='data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0MDAiIGhlaWdodD0iNDAwIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjRkYwMEZGIi8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtc2l6ZT0iNDBweCIgZmlsbD0iI0ZGRiIgZGVtaS1ib2xkPSJ0cnVlIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBkeT0iLjNlbSI+Tk8gSU1BR0UgTCA8L3RleHQ+PC9zdmc+'">
-        </div>
-
+        <img
+            id="mordechai-btn"
+            src="mordechai.png"
+            alt="Mordechai"
+            id="mordechai-img"
+            style="width:clamp(140px,38vw,280px);height:clamp(140px,38vw,280px);object-fit:cover;border-radius:30px;border:6px solid #FF00FF;box-shadow:0 0 60px #FF00FF;touch-action:manipulation;cursor:pointer;user-select:none;"
+            onerror="this.src='data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0MDAiIGhlaWdodD0iNDAwIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjRkYwMEZGIi8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtc2l6ZT0iNDBweCIgZmlsbD0iI0ZGRiIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPk1PUkRFQ0hBSTwvdGV4dD48L3N2Zz4='">
     </div>
 
-    <!-- Shora Farms / Upgrades -->
-    <div class="w-full md:w-1/3 bg-black/80 flex flex-col border-r-8 md:border-r-0 md:border-l-8 border-[#00FFFF] shadow-[0_0_30px_#00FFFF] relative z-10">
-        <div class="p-6 bg-black border-b-4 border-[#FF00FF] text-center">
-            <h2 class="text-3xl font-black text-[#39FF14] drop-shadow-[0_0_5px_#39FF14]">שורה פארמס ושדרוגים</h2>
-            <p class="text-md text-white mt-2 font-bold">קנה שדרוגים ללחיצות או שורה פארמס בשביל אוטומציה</p>
+    <!-- SHOP PANEL -->
+    <div id="shop-panel">
+        <div style="padding:0.75rem 1rem;background:#000;border-bottom:3px solid #FF00FF;text-align:center">
+            <h2 style="font-size:1.4rem;font-weight:900;color:#39FF14;text-shadow:0 0 5px #39FF14;margin:0">שורה פארמס ושדרוגים</h2>
         </div>
-        
-        <div id="shop-container" class="flex-1 overflow-y-auto p-4 pb-10">
-            <!-- אזור שדרוגי לחיצה -->
-            <div class="mb-8">
-                <h3 class="text-2xl font-bold text-[#FF00FF] mb-3 border-b-2 border-[#FF00FF] pb-1 uppercase tracking-wider">שדרוגי לחיצה (קליקים)</h3>
-                <div id="upgrades-container" class="space-y-4"></div>
+
+        <div id="shop-scroll">
+            <!-- Click Upgrades -->
+            <div style="margin-bottom:1.5rem">
+                <h3 style="font-size:1.1rem;font-weight:900;color:#FF00FF;border-bottom:2px solid #FF00FF;padding-bottom:4px;margin-bottom:10px;text-transform:uppercase">שדרוגי לחיצה</h3>
+                <div id="upgrades-container" style="display:flex;flex-direction:column;gap:10px"></div>
             </div>
-            
-            <!-- אזור שורה פארמס -->
-            <div>
-                <h3 class="text-2xl font-bold text-[#00FFFF] mb-3 border-b-2 border-[#00FFFF] pb-1 uppercase tracking-wider">שורה פארמס (אוטומטי)</h3>
-                <div id="buildings-container" class="space-y-4"></div>
+
+            <!-- Buildings -->
+            <div style="margin-bottom:1.5rem">
+                <h3 style="font-size:1.1rem;font-weight:900;color:#00FFFF;border-bottom:2px solid #00FFFF;padding-bottom:4px;margin-bottom:10px;text-transform:uppercase">שורה פארמס (אוטומטי)</h3>
+                <div id="buildings-container" style="display:flex;flex-direction:column;gap:10px"></div>
+            </div>
+
+            <!-- Rebirth History -->
+            <div id="rebirth-history-section" style="display:none;margin-bottom:1.5rem">
+                <h3 style="font-size:1.1rem;font-weight:900;color:#FFD700;border-bottom:2px solid #FFD700;padding-bottom:4px;margin-bottom:10px;text-transform:uppercase">Rebirth History</h3>
+                <div id="rebirth-history-list" style="display:flex;flex-direction:column;gap:8px"></div>
             </div>
         </div>
     </div>
 
-    <script>
-        // --- Game State ---
-        let shora = 0;
-        let shoraPerSecond = 0;
-        let shoraPerClick = 1;
+</div>
 
-        // --- Click Upgrades Data ---
-        const clickUpgrades = [
-            {
-                id: 'cheap_mouse',
-                name: 'real stats',
-                baseCost: 50,
-                cost: 50,
-                boost: 1, 
-                count: 0,
-                desc: 'הפעם הנתונים אמיתיים לא כמו ה-fake stats (+1 לקליק).'
-            },
-            {
-                id: 'speedrunner',
-                name: 'המונסטר של רגב',
-                baseCost: 500,
-                cost: 500,
-                boost: 10, 
-                count: 0,
-                desc: 'שותה מונסטר ולוחץ כמו משוגע (+10 לקליק).'
-            },
-            {
-                id: 'sigma_glove',
-                name: 'ניר בנדה',
-                baseCost: 5000,
-                cost: 5000,
-                boost: 100, 
-                count: 0,
-                desc: 'הכל עובר ל7 (+100 לקליק).'
-            }
-        ];
+<script>
+// ===================== GAME STATE =====================
+let shora = 0;
+let shoraPerSecond = 0;
+let shoraPerClick = 1;
+let prestigeCount = 0;
+let rebirthMultiplier = 1;
+let rebirthHistory = [];
+let cheatMode = false;
 
-        // --- Buildings Data ---
-        const buildings = [
-            {
-                id: 'fake_stats',
-                name: 'fake stats', // ONLY THIS IN ENGLISH
-                baseCost: 15,
-                cost: 15,
-                sps: 1, 
-                count: 0,
-                desc: 'מזייף קצת נתוני התפלגות נורמלית כדי לייצר שורה מכלום.',
-                crazy: false
-            },
-            {
-                id: 'aviv_cenzor',
-                name: 'אביב צנזור',
-                baseCost: 100,
-                cost: 100,
-                sps: 5,
-                count: 0,
-                desc: 'תהי פונקציית שורה f(x). נוכיח באינדוקציה שמרדכי חסום.',
-                crazy: false
-            },
-            {
-                id: 'door',
-                name: 'דלת',
-                baseCost: 1100,
-                cost: 1100,
-                sps: 50,
-                count: 0,
-                desc: 'פשוט דלת. לא צריך להסביר יותר.',
-                crazy: false
-            },
-            {
-                id: 'mordemet',
-                name: 'מרדמת',
-                baseCost: 12000,
-                cost: 12000,
-                sps: 400,
-                count: 0,
-                desc: 'מרדכי ישן? או שמא הוא מת? העיקר שמייצר שורה.',
-                crazy: false
-            },
-            {
-                id: 'who_is',
-                name: 'מי זה מרדכי?!?!?!?!?!?!?',
-                baseCost: 100000,
-                cost: 100000,
-                sps: 5000,
-                count: 0,
-                desc: 'קריסה מוחלטת של משוואות דיפרנציאליות לתוך חור שחור של שורה.',
-                crazy: true 
-            }
-        ];
+function getRebirthThreshold() {
+    if (cheatMode) return 0;
+    return Math.floor(1000 * Math.pow(4, prestigeCount));
+}
+function getNextMultiplier() {
+    return parseFloat(Math.pow(1.25, prestigeCount + 1).toFixed(4));
+}
 
-        // DOM Elements
-        const shoraDisplay = document.getElementById('shora-display');
-        const spsDisplay = document.getElementById('sps-display');
-        const mordechaiBtn = document.getElementById('mordechai-btn');
-        const shopContainer = document.getElementById('shop-container');
-        const upgradesContainer = document.getElementById('upgrades-container');
-        const buildingsContainer = document.getElementById('buildings-container');
+// ===================== CHEAT SYSTEM =====================
+// Usage: type  cheat()  in browser console. Persists via localStorage.
+window.cheat = function() {
+    cheatMode = true;
+    localStorage.setItem('mordechaiCheat', '1');
+    activateCheatMode();
+    console.log('%c🔥 CHEAT MODE ON! Infinite everything. You absolute legend. 🔥', 'color:#FFD700;font-size:1.2rem;font-weight:bold');
+};
 
-        function initGame() {
-            loadGame();
-            renderShop();
-            updateDisplay();
-            
-            setInterval(() => {
-                shora += shoraPerSecond / 10;
-                updateDisplay();
-            }, 100);
-
-            setInterval(saveGame, 5000); // Save faster because we grindin
+// Also expose as a property setter so  cheat = true  works
+Object.defineProperty(window, 'cheat', {
+    get() { return cheatMode; },
+    set(v) {
+        if (v === true || v === 1 || v === 'true') {
+            cheatMode = true;
+            localStorage.setItem('mordechaiCheat', '1');
+            activateCheatMode();
+            console.log('%c🔥 CHEAT MODE ON! Infinite everything. You absolute legend. 🔥', 'color:#FFD700;font-size:1.2rem;font-weight:bold');
+        } else {
+            cheatMode = false;
+            localStorage.removeItem('mordechaiCheat');
+            document.getElementById('cheat-banner').style.display = 'none';
+            console.log('Cheat mode off. RIP.');
         }
+    },
+    configurable: true
+});
 
-        function updateDisplay() {
-            shoraDisplay.innerText = Math.floor(shora).toLocaleString('en-US');
-            spsDisplay.innerText = shoraPerSecond.toLocaleString('en-US');
-            
-            buildings.forEach(building => {
-                const btn = document.getElementById(`buy-btn-${building.id}`);
-                const container = document.getElementById(`building-${building.id}`);
-                if (btn && container) {
-                    if (shora >= building.cost) {
-                        btn.disabled = false;
-                        container.classList.remove('opacity-50', 'grayscale');
-                        btn.classList.remove('bg-gray-700', 'text-gray-400');
-                        
-                        if (building.crazy) {
-                            btn.classList.add('bg-black', 'text-white', 'border-2', 'border-white');
-                        } else {
-                            btn.classList.add('bg-[#39FF14]', 'text-black', 'hover:bg-white', 'hover:scale-105');
-                        }
-                    } else {
-                        btn.disabled = true;
-                        container.classList.add('opacity-50', 'grayscale');
-                        btn.classList.remove('bg-[#39FF14]', 'text-black', 'hover:bg-white', 'hover:scale-105', 'bg-black', 'text-white');
-                        btn.classList.add('bg-gray-700', 'text-gray-400');
-                    }
-                }
-            });
+function activateCheatMode() {
+    document.getElementById('cheat-banner').style.display = 'block';
+    // Instantly give absurd amounts
+    shora = 999999999999;
+    rebirthMultiplier = 999999;
+    prestigeCount = 999;
+    // Buy everything
+    buildings.forEach(b => { b.count = 9999; b.cost = 0; });
+    clickUpgrades.forEach(u => { u.count = 9999; u.cost = 0; });
+    calculateSPS();
+    renderShop();
+    updateDisplay();
+    saveGame();
+}
 
-            // עדכון שדרוגי לחיצה
-            clickUpgrades.forEach(upgrade => {
-                const btn = document.getElementById(`buy-upgrade-btn-${upgrade.id}`);
-                const container = document.getElementById(`upgrade-${upgrade.id}`);
-                if (btn && container) {
-                    if (shora >= upgrade.cost) {
-                        btn.disabled = false;
-                        container.classList.remove('opacity-50', 'grayscale');
-                        btn.classList.remove('bg-gray-700', 'text-gray-400');
-                        btn.classList.add('bg-[#FF00FF]', 'text-white', 'hover:bg-white', 'hover:text-[#FF00FF]', 'hover:scale-105');
-                    } else {
-                        btn.disabled = true;
-                        container.classList.add('opacity-50', 'grayscale');
-                        btn.classList.remove('bg-[#FF00FF]', 'text-white', 'hover:bg-white', 'hover:text-[#FF00FF]', 'hover:scale-105');
-                        btn.classList.add('bg-gray-700', 'text-gray-400');
-                    }
-                }
-            });
+// ===================== ITEM DATA =====================
+const clickUpgrades = [
+    { id: 'cheap_mouse', name: 'real stats', baseCost: 50, cost: 50, boost: 1, count: 0,
+      desc: 'הפעם הנתונים אמיתיים לא כמו ה-fake stats (+1 לקליק).' },
+    { id: 'speedrunner', name: 'המונסטר של רגב', baseCost: 500, cost: 500, boost: 10, count: 0,
+      desc: 'שותה מונסטר ולוחץ כמו משוגע (+10 לקליק).' },
+    { id: 'sigma_glove', name: 'ניר בנדה', baseCost: 5000, cost: 5000, boost: 100, count: 0,
+      desc: 'הכל עובר ל7 (+100 לקליק).' }
+];
+
+const buildings = [
+    { id: 'fake_stats', name: 'fake stats', baseCost: 15, cost: 15, sps: 1, count: 0,
+      desc: 'מזייף קצת נתוני התפלגות נורמלית כדי לייצר שורה מכלום.', crazy: false },
+    { id: 'aviv_cenzor', name: 'אביב צנזור', baseCost: 100, cost: 100, sps: 5, count: 0,
+      desc: 'תהי פונקציית שורה f(x). נוכיח באינדוקציה שמרדכי חסום.', crazy: false },
+    { id: 'door', name: 'דלת', baseCost: 1100, cost: 1100, sps: 50, count: 0,
+      desc: 'פשוט דלת. לא צריך להסביר יותר.', crazy: false },
+    { id: 'mordemet', name: 'מרדמת', baseCost: 12000, cost: 12000, sps: 400, count: 0,
+      desc: 'מרדכי ישן? או שמא הוא מת? העיקר שמייצר שורה.', crazy: false },
+    { id: 'who_is', name: 'מי זה מרדכי?!?!?!?!?!?!?', baseCost: 100000, cost: 100000, sps: 5000, count: 0,
+      desc: 'קריסה מוחלטת של משוואות דיפרנציאליות לתוך חור שחור של שורה.', crazy: true }
+];
+
+// ===================== DOM =====================
+const shoraDisplay   = document.getElementById('shora-display');
+const spsDisplay     = document.getElementById('sps-display');
+const mordechaiBtn   = document.getElementById('mordechai-btn');
+const upgradesCont   = document.getElementById('upgrades-container');
+const buildingsCont  = document.getElementById('buildings-container');
+const rebirthBtn     = document.getElementById('rebirth-btn');
+const reqText        = document.getElementById('rebirth-requirement-text');
+
+// ===================== INIT =====================
+function initGame() {
+    loadGame();
+    renderShop();
+    updateDisplay();
+
+    setInterval(() => {
+        if (cheatMode) {
+            shora = 999999999999;
+            shoraPerSecond = 999999999;
+        } else {
+            shora += (shoraPerSecond / 10) * rebirthMultiplier;
         }
+        updateDisplay();
+    }, 100);
 
-        mordechaiBtn.addEventListener('mousedown', (e) => {
-            shora += shoraPerClick;
-            updateDisplay();
+    setInterval(saveGame, 5000);
+}
 
-            createClickParticle(e.clientX, e.clientY);
-            createMordechaiParticle(e.clientX, e.clientY);
-        });
+// ===================== DISPLAY =====================
+function fmt(n) { return Math.floor(n).toLocaleString('en-US'); }
 
-        function createClickParticle(x, y) {
-            const particle = document.createElement('div');
-            particle.classList.add('click-text');
-            
-            // מציג רק את המספר בלי אימוג'ים של שלדים וכו'
-            particle.innerText = `+${shoraPerClick}`;
-            
-            const offsetX = (Math.random() - 0.5) * 100;
-            const offsetY = (Math.random() - 0.5) * 100;
-            
-            particle.style.left = `${x + offsetX}px`;
-            particle.style.top = `${y - 40 + offsetY}px`;
-            
-            document.body.appendChild(particle);
-            
-            setTimeout(() => { particle.remove(); }, 800);
+function updateDisplay() {
+    shoraDisplay.innerText = cheatMode ? '∞' : fmt(shora);
+    spsDisplay.innerText   = cheatMode ? '∞' : fmt(shoraPerSecond * rebirthMultiplier);
+
+    const multDisp = document.getElementById('click-multiplier-display');
+    const multVal  = document.getElementById('click-mult-val');
+    if (cheatMode) {
+        multDisp.style.display = 'block';
+        multVal.innerText = '∞';
+    } else if (prestigeCount > 0) {
+        multDisp.style.display = 'block';
+        multVal.innerText = rebirthMultiplier.toFixed(2);
+    } else {
+        multDisp.style.display = 'none';
+    }
+
+    const badge = document.getElementById('prestige-badge-display');
+    const countEl = document.getElementById('prestige-count-display');
+    if (prestigeCount > 0 || cheatMode) {
+        badge.style.display = 'inline-block';
+        countEl.innerText = cheatMode ? '∞' : prestigeCount;
+    } else {
+        badge.style.display = 'none';
+    }
+
+    const threshold = getRebirthThreshold();
+    if (cheatMode || shora >= threshold) {
+        rebirthBtn.classList.remove('disabled');
+        reqText.innerText = cheatMode ? '✅ Always ready (cheat)' : '✅ Ready!';
+    } else {
+        rebirthBtn.classList.add('disabled');
+        reqText.innerText = `Need ${fmt(threshold)} שורה`;
+    }
+
+    // Buildings affordability
+    buildings.forEach(b => {
+        const btn  = document.getElementById(`buy-btn-${b.id}`);
+        const cont = document.getElementById(`building-${b.id}`);
+        if (!btn || !cont) return;
+        const canAfford = cheatMode || shora >= b.cost;
+        btn.disabled = !canAfford;
+        cont.classList.toggle('opacity-50', !canAfford);
+        cont.classList.toggle('grayscale', !canAfford);
+        if (canAfford) {
+            btn.classList.remove('bg-gray-700','text-gray-400');
+            btn.classList.add(b.crazy ? 'bg-black' : 'bg-[#39FF14]', b.crazy ? 'text-white' : 'text-black');
+        } else {
+            btn.classList.remove('bg-[#39FF14]','text-black','bg-black','text-white');
+            btn.classList.add('bg-gray-700','text-gray-400');
         }
+    });
 
-        function createMordechaiParticle(x, y) {
-            const img = document.createElement('img');
-            img.src = 'mordechai.png';
-            img.classList.add('click-img');
-            
-            img.onerror = function() {
-                this.src = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0MCIgaGVpZ2h0PSI0MCI+PGNpcmNsZSBjeD0iMjAiIGN5PSIyMCIgcj0iMjAiIGZpbGw9IiNGRjAwRkYiLz48L3N2Zz4=';
-            };
-
-            const offsetX = (Math.random() - 0.5) * 100;
-            const offsetY = (Math.random() - 0.5) * 100;
-            
-            img.style.left = `${x - 25 + offsetX}px`;
-            img.style.top = `${y - 25 + offsetY}px`;
-            
-            document.body.appendChild(img);
-            
-            setTimeout(() => { img.remove(); }, 1000);
+    // Upgrades affordability
+    clickUpgrades.forEach(u => {
+        const btn  = document.getElementById(`buy-upgrade-btn-${u.id}`);
+        const cont = document.getElementById(`upgrade-${u.id}`);
+        if (!btn || !cont) return;
+        const canAfford = cheatMode || shora >= u.cost;
+        btn.disabled = !canAfford;
+        cont.classList.toggle('opacity-50', !canAfford);
+        cont.classList.toggle('grayscale', !canAfford);
+        if (canAfford) {
+            btn.classList.remove('bg-gray-700','text-gray-400');
+            btn.classList.add('bg-[#FF00FF]','text-white');
+        } else {
+            btn.classList.remove('bg-[#FF00FF]','text-white');
+            btn.classList.add('bg-gray-700','text-gray-400');
         }
+    });
+}
 
-        function renderShop() {
-            upgradesContainer.innerHTML = '';
-            buildingsContainer.innerHTML = '';
-            
-            // רינדור שדרוגי לחיצה
-            clickUpgrades.forEach((upgrade, index) => {
-                const uDiv = document.createElement('div');
-                uDiv.id = `upgrade-${upgrade.id}`;
-                
-                uDiv.className = `bg-[#222] rounded-2xl p-4 flex flex-col gap-2 transition-all duration-200 border-2 border-[#FF00FF]`;
-                
-                uDiv.innerHTML = `
-                    <div class="flex justify-between items-start">
-                        <div>
-                            <div class="text-xl font-black text-white">${upgrade.name}</div>
-                            <div class="text-sm font-bold text-[#FF00FF]">+${upgrade.boost.toLocaleString('en-US')} לקליק</div>
-                        </div>
-                        <div class="text-4xl font-black text-white bg-black/50 border-2 border-[#FF00FF] px-3 py-1 rounded-xl shadow-[0_0_10px_#FF00FF]">${upgrade.count}</div>
-                    </div>
-                    <div class="text-sm font-bold text-gray-300 min-h-[2.5rem] italic">"${upgrade.desc}"</div>
-                    <button id="buy-upgrade-btn-${upgrade.id}" onclick="buyClickUpgrade(${index})" class="mt-2 w-full py-3 rounded-xl font-black transition-all duration-100 flex justify-between px-4 items-center uppercase">
-                        <span>קנה שדרוג קליק</span>
-                        <span class="bg-black text-[#00FFFF] px-2 py-1 rounded border border-[#00FFFF]" dir="ltr">${Math.floor(upgrade.cost).toLocaleString('en-US')} שורה</span>
-                    </button>
-                `;
-                
-                upgradesContainer.appendChild(uDiv);
-            });
+// ===================== CLICK =====================
+function handleClick(e) {
+    e.preventDefault();
+    const gain = cheatMode ? 999999 : shoraPerClick * rebirthMultiplier;
+    if (!cheatMode) shora += gain;
 
-            // רינדור שורה פארמס
-            buildings.forEach((building, index) => {
-                const bDiv = document.createElement('div');
-                bDiv.id = `building-${building.id}`;
-                
-                let crazyClasses = "";
-                let nameClasses = "text-xl font-black text-white";
-                let bgClass = "bg-[#222]";
-                let borderClass = "border-2 border-[#00FFFF]";
+    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
 
-                if (building.crazy) {
-                    crazyClasses = "crazy-upgrade";
-                    nameClasses = "crazy-text";
-                }
+    createClickParticle(clientX, clientY, gain);
+    createMordechaiParticle(clientX, clientY);
+    updateDisplay();
+}
 
-                bDiv.className = `${bgClass} rounded-2xl p-4 flex flex-col gap-2 transition-all duration-200 ${borderClass} ${crazyClasses}`;
-                
-                bDiv.innerHTML = `
-                    <div class="flex justify-between items-start">
-                        <div>
-                            <div class="${nameClasses}">${building.name}</div>
-                            <div class="text-sm font-bold text-[#00FFFF]">+${building.sps.toLocaleString('en-US')} שורה לשנייה</div>
-                        </div>
-                        <div class="text-4xl font-black text-white bg-black/50 border-2 border-white px-3 py-1 rounded-xl shadow-[0_0_10px_white]">${building.count}</div>
-                    </div>
-                    <div class="text-sm font-bold text-gray-300 min-h-[2.5rem] italic">"${building.desc}"</div>
-                    <button id="buy-btn-${building.id}" onclick="buyBuilding(${index})" class="mt-2 w-full py-3 rounded-xl font-black transition-all duration-100 flex justify-between px-4 items-center uppercase">
-                        <span>קנה שורה פארם</span>
-                        <span class="bg-black text-[#FF00FF] px-2 py-1 rounded border border-[#FF00FF]" dir="ltr">${Math.floor(building.cost).toLocaleString('en-US')} שורה</span>
-                    </button>
-                `;
-                
-                buildingsContainer.appendChild(bDiv);
-            });
-        }
+mordechaiBtn.addEventListener('mousedown', handleClick);
+mordechaiBtn.addEventListener('touchstart', handleClick, { passive: false });
 
-        window.buyClickUpgrade = function(index) {
-            const upgrade = clickUpgrades[index];
-            if (shora >= upgrade.cost) {
-                shora -= upgrade.cost;
-                upgrade.count++;
-                
-                // מתייקר פי 1.5 כל פעם
-                upgrade.cost = upgrade.baseCost * Math.pow(1.5, upgrade.count);
-                
-                calculateSPS();
-                renderShop();
-                updateDisplay();
-            }
-        };
+function createClickParticle(x, y, gain) {
+    const p = document.createElement('div');
+    p.className = 'click-text';
+    p.innerText = `+${cheatMode ? '∞' : fmt(gain)}`;
+    p.style.left = `${x + (Math.random()-0.5)*80}px`;
+    p.style.top  = `${y - 30 + (Math.random()-0.5)*60}px`;
+    document.body.appendChild(p);
+    setTimeout(() => p.remove(), 800);
+}
 
-        window.buyBuilding = function(index) {
-            const building = buildings[index];
-            if (shora >= building.cost) {
-                shora -= building.cost;
-                building.count++;
-                
-                building.cost = building.baseCost * Math.pow(1.15, building.count);
-                
-                calculateSPS();
-                renderShop();
-                updateDisplay();
-                
-                if(building.crazy) {
-                    document.body.style.animation = "epilepsyBg 0.1s infinite alternate";
-                    setTimeout(() => { document.body.style.animation = "brainrotBg 5s ease infinite"; }, 1000);
-                }
-            }
-        };
+function createMordechaiParticle(x, y) {
+    const img = document.createElement('img');
+    img.src = 'mordechai.png';
+    img.className = 'click-img';
+    img.onerror = function() {
+        this.src = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0MCIgaGVpZ2h0PSI0MCI+PGNpcmNsZSBjeD0iMjAiIGN5PSIyMCIgcj0iMjAiIGZpbGw9IiNGRjAwRkYiLz48L3N2Zz4=';
+    };
+    img.style.left = `${x - 22 + (Math.random()-0.5)*80}px`;
+    img.style.top  = `${y - 22 + (Math.random()-0.5)*60}px`;
+    document.body.appendChild(img);
+    setTimeout(() => img.remove(), 1000);
+}
 
-        function calculateSPS() {
-            let total = 0;
-            buildings.forEach(b => total += b.sps * b.count);
-            shoraPerSecond = total;
-            
-            // חישוב שורה לכל לחיצה מהשדרוגים
-            let totalClickBoost = 0;
-            clickUpgrades.forEach(u => totalClickBoost += u.boost * u.count);
-            shoraPerClick = 1 + totalClickBoost; 
-        }
+// ===================== SHOP RENDER =====================
+function renderShop() {
+    upgradesCont.innerHTML = '';
+    buildingsCont.innerHTML = '';
 
-        function saveGame() {
-            const saveObj = {
-                shora: shora,
-                buildingsCount: buildings.map(b => b.count),
-                upgradesCount: clickUpgrades.map(u => u.count)
-            };
-            localStorage.setItem('mordechaiSaveBrainrot', JSON.stringify(saveObj)); // New save key
-        }
+    clickUpgrades.forEach((u, i) => {
+        const d = document.createElement('div');
+        d.id = `upgrade-${u.id}`;
+        d.style.cssText = 'background:#222;border-radius:14px;padding:12px;display:flex;flex-direction:column;gap:8px;border:2px solid #FF00FF;transition:all 0.2s';
+        d.innerHTML = `
+            <div style="display:flex;justify-content:space-between;align-items:flex-start">
+                <div>
+                    <div style="font-size:1rem;font-weight:900;color:#fff">${u.name}</div>
+                    <div style="font-size:0.8rem;font-weight:700;color:#FF00FF">+${u.boost.toLocaleString('en-US')} לקליק</div>
+                </div>
+                <div style="font-size:1.8rem;font-weight:900;color:#fff;background:rgba(0,0,0,0.5);border:2px solid #FF00FF;padding:2px 10px;border-radius:10px;box-shadow:0 0 8px #FF00FF">${cheatMode ? '∞' : u.count}</div>
+            </div>
+            <div style="font-size:0.75rem;font-weight:700;color:#bbb;font-style:italic">"${u.desc}"</div>
+            <button id="buy-upgrade-btn-${u.id}" onclick="buyClickUpgrade(${i})"
+                style="width:100%;padding:10px 12px;border-radius:10px;font-weight:900;font-family:'Comic Sans MS',sans-serif;font-size:0.85rem;display:flex;justify-content:space-between;align-items:center;border:none;cursor:pointer;text-transform:uppercase;touch-action:manipulation">
+                <span>קנה שדרוג קליק</span>
+                <span style="background:#000;color:#00FFFF;padding:3px 8px;border-radius:6px;border:1px solid #00FFFF" dir="ltr">${cheatMode ? '0' : fmt(u.cost)} שורה</span>
+            </button>
+        `;
+        upgradesCont.appendChild(d);
+    });
 
-        function loadGame() {
-            const saveStr = localStorage.getItem('mordechaiSaveBrainrot'); // Load brainrot save
-            if (saveStr) {
-                try {
-                    const saveObj = JSON.parse(saveStr);
-                    shora = saveObj.shora || 0;
-                    
-                    if (saveObj.buildingsCount && saveObj.buildingsCount.length === buildings.length) {
-                        buildings.forEach((b, i) => {
-                            b.count = saveObj.buildingsCount[i];
-                            b.cost = b.baseCost * Math.pow(1.15, b.count);
-                        });
-                    }
+    buildings.forEach((b, i) => {
+        const d = document.createElement('div');
+        d.id = `building-${b.id}`;
+        const nameClass = b.crazy ? 'crazy-text' : '';
+        const crazyClass = b.crazy ? 'crazy-upgrade' : '';
+        d.className = crazyClass;
+        d.style.cssText = `background:#222;border-radius:14px;padding:12px;display:flex;flex-direction:column;gap:8px;border:2px solid #00FFFF;transition:all 0.2s`;
+        d.innerHTML = `
+            <div style="display:flex;justify-content:space-between;align-items:flex-start">
+                <div style="max-width:70%">
+                    <div style="font-size:1rem;font-weight:900" class="${nameClass}">${b.name}</div>
+                    <div style="font-size:0.8rem;font-weight:700;color:#00FFFF">+${b.sps.toLocaleString('en-US')} שורה/שנייה</div>
+                </div>
+                <div style="font-size:1.8rem;font-weight:900;color:#fff;background:rgba(0,0,0,0.5);border:2px solid #fff;padding:2px 10px;border-radius:10px;box-shadow:0 0 8px #fff">${cheatMode ? '∞' : b.count}</div>
+            </div>
+            <div style="font-size:0.75rem;font-weight:700;color:#bbb;font-style:italic">"${b.desc}"</div>
+            <button id="buy-btn-${b.id}" onclick="buyBuilding(${i})"
+                style="width:100%;padding:10px 12px;border-radius:10px;font-weight:900;font-family:'Comic Sans MS',sans-serif;font-size:0.85rem;display:flex;justify-content:space-between;align-items:center;border:none;cursor:pointer;text-transform:uppercase;touch-action:manipulation">
+                <span>קנה שורה פארם</span>
+                <span style="background:#000;color:#FF00FF;padding:3px 8px;border-radius:6px;border:1px solid #FF00FF" dir="ltr">${cheatMode ? '0' : fmt(b.cost)} שורה</span>
+            </button>
+        `;
+        buildingsCont.appendChild(d);
+    });
 
-                    if (saveObj.upgradesCount && saveObj.upgradesCount.length === clickUpgrades.length) {
-                        clickUpgrades.forEach((u, i) => {
-                            u.count = saveObj.upgradesCount[i];
-                            u.cost = u.baseCost * Math.pow(1.5, u.count);
-                        });
-                    }
-                    
-                    calculateSPS();
-                } catch (e) {
-                    console.error("Save load failed fr fr");
-                }
-            }
-        }
+    renderRebirthHistory();
+}
 
-        initGame();
+function renderRebirthHistory() {
+    const section = document.getElementById('rebirth-history-section');
+    const list    = document.getElementById('rebirth-history-list');
+    if (rebirthHistory.length === 0) { section.style.display = 'none'; return; }
+    section.style.display = 'block';
+    list.innerHTML = '';
+    rebirthHistory.slice().reverse().forEach(entry => {
+        const el = document.createElement('div');
+        el.style.cssText = 'background:#1a1400;border:1px solid rgba(255,215,0,0.4);border-radius:10px;padding:10px;font-size:0.8rem;color:#FFD700';
+        el.innerHTML = `<span style="font-weight:900">Rebirth #${entry.prestige}</span>
+            <span style="color:rgba(255,255,255,0.5);margin-right:6px">— ${entry.totalShora.toLocaleString('en-US')} שורה collected</span>
+            <span style="color:#FF8C00">×${entry.multiplierAfter.toFixed(2)} bonus</span>`;
+        list.appendChild(el);
+    });
+}
 
-    </script>
+// ===================== BUY =====================
+window.buyClickUpgrade = function(i) {
+    const u = clickUpgrades[i];
+    if (!cheatMode && shora < u.cost) return;
+    if (!cheatMode) shora -= u.cost;
+    u.count++;
+    u.cost = u.baseCost * Math.pow(1.5, u.count);
+    calculateSPS(); renderShop(); updateDisplay();
+};
+
+window.buyBuilding = function(i) {
+    const b = buildings[i];
+    if (!cheatMode && shora < b.cost) return;
+    if (!cheatMode) shora -= b.cost;
+    b.count++;
+    b.cost = b.baseCost * Math.pow(1.15, b.count);
+    calculateSPS(); renderShop(); updateDisplay();
+    if (b.crazy) {
+        document.body.style.animation = 'epilepsyBg 0.1s infinite alternate';
+        setTimeout(() => { document.body.style.animation = 'brainrotBg 5s ease infinite'; }, 1000);
+    }
+};
+
+// ===================== REBIRTH =====================
+function openRebirthModal() {
+    if (!cheatMode && shora < getRebirthThreshold()) return;
+    const nextMult = getNextMultiplier();
+    document.getElementById('rebirth-modal-text').innerHTML =
+        `You lose all your שורה, farms, and upgrades...<br>
+         <span style="color:#FFD700;font-size:1.4rem;font-weight:900">But you get a ×${nextMult.toFixed(2)} permanent bonus to everything!</span><br>
+         <small style="color:#aaa">(Multiplies clicks, SPS — everything!)</small>`;
+    document.getElementById('rebirth-modal-current').innerHTML =
+        `Rebirth <strong style="color:#FFD700">#${prestigeCount + 1}</strong> — you currently have ${cheatMode ? '∞' : fmt(shora)} שורה`;
+    document.getElementById('rebirth-modal').classList.add('show');
+}
+
+function closeRebirthModal() {
+    document.getElementById('rebirth-modal').classList.remove('show');
+}
+
+function confirmRebirth() {
+    closeRebirthModal();
+    rebirthHistory.push({
+        prestige: prestigeCount + 1,
+        totalShora: Math.floor(shora),
+        multiplierAfter: getNextMultiplier()
+    });
+    prestigeCount++;
+    rebirthMultiplier = parseFloat(Math.pow(1.25, prestigeCount).toFixed(4));
+    shora = 0;
+    buildings.forEach(b => { b.count = 0; b.cost = b.baseCost; });
+    clickUpgrades.forEach(u => { u.count = 0; u.cost = u.baseCost; });
+    calculateSPS(); renderShop(); updateDisplay(); saveGame();
+
+    const flash = document.getElementById('rebirth-flash');
+    flash.style.display = 'block';
+    setTimeout(() => { flash.style.display = 'none'; }, 1200);
+}
+
+// ===================== CALCULATE =====================
+function calculateSPS() {
+    let total = 0;
+    buildings.forEach(b => total += b.sps * b.count);
+    shoraPerSecond = total;
+    let boost = 0;
+    clickUpgrades.forEach(u => boost += u.boost * u.count);
+    shoraPerClick = 1 + boost;
+}
+
+// ===================== SAVE / LOAD =====================
+function saveGame() {
+    localStorage.setItem('mordechaiSaveV3', JSON.stringify({
+        shora, prestigeCount, rebirthMultiplier, rebirthHistory,
+        buildingsCount: buildings.map(b => b.count),
+        upgradesCount: clickUpgrades.map(u => u.count),
+        cheatMode
+    }));
+}
+
+function loadGame() {
+    // Check cheat flag first
+    if (localStorage.getItem('mordechaiCheat') === '1') {
+        cheatMode = true;
+    }
+
+    const raw = localStorage.getItem('mordechaiSaveV3');
+    if (raw) {
+        try {
+            const s = JSON.parse(raw);
+            shora             = s.shora || 0;
+            prestigeCount     = s.prestigeCount || 0;
+            rebirthMultiplier = s.rebirthMultiplier || 1;
+            rebirthHistory    = s.rebirthHistory || [];
+            if (s.cheatMode) cheatMode = true;
+
+            if (s.buildingsCount?.length === buildings.length)
+                buildings.forEach((b,i) => { b.count = s.buildingsCount[i]; b.cost = b.baseCost * Math.pow(1.15, b.count); });
+            if (s.upgradesCount?.length === clickUpgrades.length)
+                clickUpgrades.forEach((u,i) => { u.count = s.upgradesCount[i]; u.cost = u.baseCost * Math.pow(1.5, u.count); });
+
+            calculateSPS();
+        } catch(e) { console.error('Save load failed'); }
+    }
+
+    if (cheatMode) {
+        document.getElementById('cheat-banner').style.display = 'block';
+        console.log('%c🔥 CHEAT MODE loaded from save 🔥', 'color:#FFD700;font-size:1rem;font-weight:bold');
+        console.log('To disable: cheat = false');
+    } else {
+        console.log('%c🎮 Mordechai Clicker loaded! Type  cheat = true  to enable god mode.', 'color:#39FF14;font-size:0.9rem');
+    }
+}
+
+initGame();
+</script>
 </body>
 </html>
