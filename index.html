@@ -306,7 +306,7 @@
                     <div style="display:flex;gap:8px;flex-wrap:wrap">
                         <input id="leaderboard-name-input" type="text" placeholder="Enter your name" maxlength="20" style="flex:1;min-width:120px;padding:10px;border-radius:12px;border:2px solid #555;background:#000;color:#fff;font-weight:700;font-family:'Comic Sans MS',sans-serif" />
                     </div>
-                    <div style="font-size:0.85rem;color:#aaa">Just enter your name and the leaderboard updates automatically based on your 최고 rebirth count and שורה score.</div>
+                    <div style="font-size:0.85rem;color:#aaa">Public leaderboard loaded from <code>leaderboard.json</code> in the repo. Enter your name and it will update automatically with your rebirth count and שורה score.</div>
                     <div id="leaderboard-list" style="display:flex;flex-direction:column;gap:6px"></div>
                 </div>
             </div>
@@ -332,6 +332,8 @@ const state = {
     cheatMode: false,
     leaderboard: [],
     localLeaderboard: [],
+    currentPlayerName: '',
+    leaderboardUpdateTimer: null,
 };
 
 const elements = {
@@ -424,6 +426,7 @@ function loadLeaderboard() {
             renderLeaderboard();
         });
     elements.leaderboardNameInput.value = getStoredPlayerName();
+    state.currentPlayerName = elements.leaderboardNameInput.value.trim().slice(0, 20);
 }
 
 function saveLeaderboardLocal(entries) {
@@ -446,8 +449,8 @@ function renderLeaderboard() {
 }
 
 function updatePlayerLeaderboard() {
-    const rawName = elements.leaderboardNameInput.value.trim().slice(0, 20);
-    const name = rawName || 'Anonymous';
+    const name = state.currentPlayerName;
+    if (!name) return;
     const score = Math.floor(state.shora);
     const rebirths = state.prestigeCount;
     if (score < 0) return;
@@ -471,9 +474,13 @@ function updatePlayerLeaderboard() {
 }
 
 function handleNameInputChange() {
-    const name = elements.leaderboardNameInput.value.trim().slice(0, 20);
-    if (name) setStoredPlayerName(name);
-    updatePlayerLeaderboard();
+    const rawName = elements.leaderboardNameInput.value.trim().slice(0, 20);
+    if (rawName) setStoredPlayerName(rawName);
+    clearTimeout(state.leaderboardUpdateTimer);
+    state.leaderboardUpdateTimer = setTimeout(() => {
+        state.currentPlayerName = rawName;
+        if (rawName) updatePlayerLeaderboard();
+    }, 600);
 }
 
 function setCheatMode(enabled) {
@@ -825,8 +832,8 @@ function initGame() {
     loadLeaderboard();
     renderShop();
     updateDisplay();
+    elements.leaderboardNameInput.addEventListener('input', handleNameInputChange);
     elements.leaderboardNameInput.addEventListener('blur', handleNameInputChange);
-    elements.leaderboardNameInput.addEventListener('change', handleNameInputChange);
     setInterval(() => {
         if (!state.cheatMode) {
             state.shora += (state.shoraPerSecond / 10) * state.rebirthMultiplier;
