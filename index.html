@@ -306,7 +306,6 @@
                     <div style="display:flex;gap:8px;flex-wrap:wrap">
                         <input id="leaderboard-name-input" type="text" placeholder="Enter your name" maxlength="20" style="flex:1;min-width:120px;padding:10px;border-radius:12px;border:2px solid #555;background:#000;color:#fff;font-weight:700;font-family:'Comic Sans MS',sans-serif" />
                     </div>
-                    <div style="font-size:0.85rem;color:#aaa">Public leaderboard loaded from <code>leaderboard.json</code> in the repo. Enter your name and it will update automatically with your rebirth count and שורה score.</div>
                     <div id="leaderboard-list" style="display:flex;flex-direction:column;gap:6px"></div>
                 </div>
             </div>
@@ -428,6 +427,7 @@ function loadLeaderboard() {
         });
     elements.leaderboardNameInput.value = getStoredPlayerName();
     state.currentPlayerName = elements.leaderboardNameInput.value.trim().slice(0, 20);
+    state.lastPlayerName = state.currentPlayerName;
 }
 
 function saveLeaderboardLocal(entries) {
