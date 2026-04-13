@@ -300,68 +300,70 @@
                 <h3 style="font-size:1.1rem;font-weight:900;color:#FFD700;border-bottom:2px solid #FFD700;padding-bottom:4px;margin-bottom:10px;text-transform:uppercase">Rebirth History</h3>
                 <div id="rebirth-history-list" style="display:flex;flex-direction:column;gap:8px"></div>
             </div>
+            <div id="leaderboard-section" style="margin-bottom:1.5rem">
+                <h3 style="font-size:1.1rem;font-weight:900;color:#FFFFFF;border-bottom:2px solid #FFFFFF;padding-bottom:4px;margin-bottom:10px;text-transform:uppercase">Leaderboard</h3>
+                <div style="display:flex;flex-direction:column;gap:10px;padding:12px;background:#111;border:2px solid #fff;border-radius:16px">
+                    <div style="display:flex;gap:8px;flex-wrap:wrap">
+                        <input id="leaderboard-name-input" type="text" placeholder="Name" maxlength="20" style="flex:1;min-width:120px;padding:10px;border-radius:12px;border:2px solid #555;background:#000;color:#fff;font-weight:700;font-family:'Comic Sans MS',sans-serif" />
+                        <button id="leaderboard-submit-btn" onclick="submitLeaderboardScore()" style="padding:10px 14px;border-radius:12px;border:none;background:#39FF14;color:#000;font-weight:900;cursor:pointer;font-family:'Comic Sans MS',sans-serif">Submit Score</button>
+                    </div>
+                    <div style="font-size:0.85rem;color:#aaa">Scores use your current שורה total. The leaderboard is loaded from <code>leaderboard.json</code> and keeps previous entries in the repo.</div>
+                    <div id="leaderboard-list" style="display:flex;flex-direction:column;gap:6px"></div>
+                </div>
+            </div>
         </div>
     </div>
 </div>
 
 <script>
-// ===================== STATE =====================
-let shora = 0;
-let shoraPerSecond = 0;
-let shoraPerClick = 1;
-let prestigeCount = 0;
-let rebirthMultiplier = 1;
-let rebirthHistory = [];
-let cheatMode = false;
+const STORAGE_KEY = 'mordechaiSaveV3';
+const CHEAT_STORAGE_KEY = '_mc';
+const LEADERBOARD_FILE = 'leaderboard.json';
+const LEADERBOARD_LOCAL_KEY = 'mordechaiLeaderboardLocal';
+const PLAYER_NAME_KEY = 'mordechaiPlayerName';
+const LOCALE = 'en-US';
 
-// ===================== SECRET CHEAT =====================
-// Sets up window.cheat as a setter — typing  cheat = true  in console activates it
-// turning it off wipes cheat-inflated state and does a clean reset to 0
-;(function() {
-    let _cheat = false;
-    Object.defineProperty(window, 'cheat', {
-        get() { return _cheat; },
-        set(v) {
-            const on = (v === true || v === 1 || v === 'true');
-            _cheat = on;
-            cheatMode = on;
-            if (on) {
-                localStorage.setItem('_mc', '1');
-                // Give everything
-                shora = 1e15;
-                rebirthMultiplier = 999999;
-                prestigeCount = 999;
-                buildings.forEach(b => { b.count = 9999; b.cost = 0; });
-                clickUpgrades.forEach(u => { u.count = 9999; u.cost = 0; });
-                calculateSPS();
-                renderShop();
-                updateDisplay();
-                saveGame();
-            } else {
-                // TURNING OFF: wipe everything back to zero, clean slate
-                localStorage.removeItem('_mc');
-                shora = 0;
-                prestigeCount = 0;
-                rebirthMultiplier = 1;
-                rebirthHistory = [];
-                buildings.forEach(b => { b.count = 0; b.cost = b.baseCost; });
-                clickUpgrades.forEach(u => { u.count = 0; u.cost = u.baseCost; });
-                calculateSPS();
-                renderShop();
-                updateDisplay();
-                saveGame();
-            }
-        },
-        configurable: true
-    });
-})();
+const state = {
+    shora: 0,
+    shoraPerSecond: 0,
+    shoraPerClick: 1,
+    prestigeCount: 0,
+    rebirthMultiplier: 1,
+    rebirthHistory: [],
+    cheatMode: false,
+    leaderboard: [],
+};
 
-// ===================== DATA =====================
+const elements = {
+    shoraDisplay: document.getElementById('shora-display'),
+    spsDisplay: document.getElementById('sps-display'),
+    clickMultiplierDisplay: document.getElementById('click-multiplier-display'),
+    clickMultVal: document.getElementById('click-mult-val'),
+    prestigeBadge: document.getElementById('prestige-badge-display'),
+    prestigeCountDisplay: document.getElementById('prestige-count-display'),
+    rebirthBtn: document.getElementById('rebirth-btn'),
+    rebirthRequirementText: document.getElementById('rebirth-requirement-text'),
+    rebirthModal: document.getElementById('rebirth-modal'),
+    rebirthModalText: document.getElementById('rebirth-modal-text'),
+    rebirthModalCurrent: document.getElementById('rebirth-modal-current'),
+    resetModal: document.getElementById('reset-modal'),
+    rebirthFlash: document.getElementById('rebirth-flash'),
+    upgradesContainer: document.getElementById('upgrades-container'),
+    buildingsContainer: document.getElementById('buildings-container'),
+    rebirthHistorySection: document.getElementById('rebirth-history-section'),
+    rebirthHistoryList: document.getElementById('rebirth-history-list'),
+    leaderboardNameInput: document.getElementById('leaderboard-name-input'),
+    leaderboardSubmitBtn: document.getElementById('leaderboard-submit-btn'),
+    leaderboardList: document.getElementById('leaderboard-list'),
+    mordechaiBtn: document.getElementById('mordechai-btn'),
+};
+
 const clickUpgrades = [
     { id:'cheap_mouse', name:'real stats', baseCost:50, cost:50, boost:1, count:0, desc:'הפעם הנתונים אמיתיים לא כמו ה-fake stats (+1 לקליק).' },
     { id:'speedrunner', name:'המונסטר של רגב', baseCost:500, cost:500, boost:10, count:0, desc:'שותה מונסטר ולוחץ כמו משוגע (+10 לקליק).' },
     { id:'sigma_glove', name:'ניר בנדה', baseCost:5000, cost:5000, boost:100, count:0, desc:'הכל עובר ל7 (+100 לקליק).' }
 ];
+
 const buildings = [
     { id:'fake_stats', name:'fake stats', baseCost:15, cost:15, sps:1, count:0, desc:'מזייף קצת נתוני התפלגות נורמלית כדי לייצר שורה מכלום.', crazy:false },
     { id:'aviv_cenzor', name:'אביב צנזור', baseCost:100, cost:100, sps:5, count:0, desc:'תהי פונקציית שורה f(x). נוכיח באינדוקציה שמרדכי חסום.', crazy:false },
@@ -370,296 +372,441 @@ const buildings = [
     { id:'who_is', name:'מי זה מרדכי?!?!?!?!?!?!?', baseCost:100000, cost:100000, sps:5000, count:0, desc:'קריסה מוחלטת של משוואות דיפרנציאליות לתוך חור שחור של שורה.', crazy:true }
 ];
 
-function getRebirthThreshold() { return cheatMode ? 0 : Math.floor(1000 * Math.pow(4, prestigeCount)); }
-function getNextMultiplier()    { return parseFloat(Math.pow(1.25, prestigeCount + 1).toFixed(4)); }
-function fmt(n)                 { return Math.floor(n).toLocaleString('en-US'); }
+const formatNumber = n => Math.floor(n).toLocaleString(LOCALE);
+const getRebirthThreshold = () => state.cheatMode ? 0 : Math.floor(1000 * Math.pow(4, state.prestigeCount));
+const getNextMultiplier = () => parseFloat(Math.pow(1.25, state.prestigeCount + 1).toFixed(4));
+const formatValue = value => state.cheatMode ? '∞' : formatNumber(value);
 
-// ===================== INIT =====================
-function initGame() {
-    loadGame();
-    renderShop();
-    updateDisplay();
-    setInterval(() => {
-        if (!cheatMode) shora += (shoraPerSecond / 10) * rebirthMultiplier;
-        updateDisplay();
-    }, 100);
-    setInterval(saveGame, 5000);
+function mergeLeaderboardEntries(base, extra) {
+    const combined = [...base];
+    extra.forEach(entry => {
+        const existing = combined.find(item => item.name.toLowerCase() === entry.name.toLowerCase());
+        if (existing) {
+            if (entry.score > existing.score) {
+                existing.score = entry.score;
+                existing.date = entry.date || existing.date;
+            }
+        } else {
+            combined.push({ name: entry.name, score: entry.score, date: entry.date || new Date().toISOString().slice(0, 10) });
+        }
+    });
+    return combined.sort((a, b) => b.score - a.score).slice(0, 10);
 }
 
-// ===================== DISPLAY =====================
-function updateDisplay() {
-    document.getElementById('shora-display').innerText = cheatMode ? '∞' : fmt(shora);
-    document.getElementById('sps-display').innerText   = cheatMode ? '∞' : fmt(shoraPerSecond * rebirthMultiplier);
+function getStoredPlayerName() {
+    return localStorage.getItem(PLAYER_NAME_KEY) || '';
+}
 
-    const multDisp = document.getElementById('click-multiplier-display');
-    const multVal  = document.getElementById('click-mult-val');
-    if (cheatMode) {
-        multDisp.style.display = 'block'; multVal.innerText = '∞';
-    } else if (prestigeCount > 0) {
-        multDisp.style.display = 'block'; multVal.innerText = rebirthMultiplier.toFixed(2);
+function setStoredPlayerName(name) {
+    localStorage.setItem(PLAYER_NAME_KEY, name);
+}
+
+function loadLeaderboard() {
+    const localData = JSON.parse(localStorage.getItem(LEADERBOARD_LOCAL_KEY) || '[]');
+    fetch(LEADERBOARD_FILE)
+        .then(response => response.ok ? response.json() : [])
+        .then(remoteEntries => {
+            state.leaderboard = mergeLeaderboardEntries(remoteEntries || [], localData || []);
+            renderLeaderboard();
+        })
+        .catch(() => {
+            state.leaderboard = mergeLeaderboardEntries([], localData || []);
+            renderLeaderboard();
+        });
+    elements.leaderboardNameInput.value = getStoredPlayerName();
+}
+
+function saveLeaderboardLocal(entries) {
+    localStorage.setItem(LEADERBOARD_LOCAL_KEY, JSON.stringify(entries));
+}
+
+function renderLeaderboard() {
+    elements.leaderboardList.innerHTML = '';
+    if (!state.leaderboard.length) {
+        elements.leaderboardList.innerHTML = '<div style="color:#aaa;font-size:0.9rem">No leaderboard entries yet.</div>';
+        return;
+    }
+    state.leaderboard.slice(0, 10).forEach((entry, index) => {
+        const row = document.createElement('div');
+        row.style.cssText = 'display:flex;justify-content:space-between;gap:8px;padding:8px 10px;border-radius:10px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.08);font-size:0.95rem;color:#fff';
+        row.innerHTML = `<span style="font-weight:900">#${index + 1} ${entry.name}</span><span>${formatNumber(entry.score)} שורה</span>`;
+        elements.leaderboardList.appendChild(row);
+    });
+}
+
+function submitLeaderboardScore() {
+    const rawName = elements.leaderboardNameInput.value.trim().slice(0, 20);
+    const name = rawName || 'Anonymous';
+    const score = Math.floor(state.shora);
+    if (score <= 0) {
+        alert('Score must be greater than 0 to submit.');
+        return;
+    }
+    setStoredPlayerName(name);
+    const localData = JSON.parse(localStorage.getItem(LEADERBOARD_LOCAL_KEY) || '[]');
+    const updated = mergeLeaderboardEntries(localData, [{ name, score, date: new Date().toISOString().slice(0, 10) }]);
+    saveLeaderboardLocal(updated);
+    state.leaderboard = mergeLeaderboardEntries(state.leaderboard, updated);
+    renderLeaderboard();
+    alert(`Score submitted for ${name}!`);
+}
+
+function setCheatMode(enabled) {
+    state.cheatMode = enabled;
+    if (enabled) {
+        localStorage.setItem(CHEAT_STORAGE_KEY, '1');
+        state.shora = 1e15;
+        state.rebirthMultiplier = 999999;
+        state.prestigeCount = 999;
+        buildings.forEach(b => { b.count = 9999; b.cost = 0; });
+        clickUpgrades.forEach(u => { u.count = 9999; u.cost = 0; });
     } else {
-        multDisp.style.display = 'none';
+        localStorage.removeItem(CHEAT_STORAGE_KEY);
+        state.shora = 0;
+        state.prestigeCount = 0;
+        state.rebirthMultiplier = 1;
+        state.rebirthHistory = [];
+        buildings.forEach(b => { b.count = 0; b.cost = b.baseCost; });
+        clickUpgrades.forEach(u => { u.count = 0; u.cost = u.baseCost; });
+    }
+    calculateSPS();
+    renderShop();
+    updateDisplay();
+    saveGame();
+}
+
+Object.defineProperty(window, 'cheat', {
+    get() { return state.cheatMode; },
+    set(v) { setCheatMode(v === true || v === 1 || v === 'true'); },
+    configurable: true,
+});
+
+function updatePurchaseButton(button, enabled, activeClasses, inactiveClasses = []) {
+    button.disabled = !enabled;
+    button.classList.toggle('bg-gray-700', !enabled);
+    button.classList.toggle('text-gray-400', !enabled);
+    activeClasses.forEach(c => button.classList.toggle(c, enabled));
+    inactiveClasses.forEach(c => button.classList.toggle(c, !enabled));
+}
+
+function updateDisplay() {
+    elements.shoraDisplay.innerText = formatValue(state.shora);
+    elements.spsDisplay.innerText = formatValue(state.shoraPerSecond * state.rebirthMultiplier);
+
+    if (state.cheatMode) {
+        elements.clickMultiplierDisplay.style.display = 'block';
+        elements.clickMultVal.innerText = '∞';
+    } else if (state.prestigeCount > 0) {
+        elements.clickMultiplierDisplay.style.display = 'block';
+        elements.clickMultVal.innerText = state.rebirthMultiplier.toFixed(2);
+    } else {
+        elements.clickMultiplierDisplay.style.display = 'none';
     }
 
-    const badge   = document.getElementById('prestige-badge-display');
-    const countEl = document.getElementById('prestige-count-display');
-    if (prestigeCount > 0 || cheatMode) {
-        badge.style.display = 'inline-block';
-        countEl.innerText = cheatMode ? '∞' : prestigeCount;
+    if (state.prestigeCount > 0 || state.cheatMode) {
+        elements.prestigeBadge.style.display = 'inline-block';
+        elements.prestigeCountDisplay.innerText = state.cheatMode ? '∞' : state.prestigeCount;
     } else {
-        badge.style.display = 'none';
+        elements.prestigeBadge.style.display = 'none';
     }
 
     const threshold = getRebirthThreshold();
-    const canRebirth = cheatMode || shora >= threshold;
-    const rebirthBtn = document.getElementById('rebirth-btn');
-    rebirthBtn.classList.toggle('disabled', !canRebirth);
-    document.getElementById('rebirth-requirement-text').innerText = canRebirth
+    const canRebirth = state.cheatMode || state.shora >= threshold;
+    elements.rebirthBtn.classList.toggle('disabled', !canRebirth);
+    elements.rebirthRequirementText.innerText = canRebirth
         ? '✅ Ready!'
-        : `Need ${fmt(threshold)} שורה`;
+        : `Need ${formatNumber(threshold)} שורה`;
 
     buildings.forEach(b => {
-        const btn  = document.getElementById(`buy-btn-${b.id}`);
+        const btn = document.getElementById(`buy-btn-${b.id}`);
         const cont = document.getElementById(`building-${b.id}`);
         if (!btn || !cont) return;
-        const ok = cheatMode || shora >= b.cost;
-        btn.disabled = !ok;
+        const ok = state.cheatMode || state.shora >= b.cost;
         cont.classList.toggle('opacity-50', !ok);
         cont.classList.toggle('grayscale', !ok);
-        if (ok) {
-            btn.classList.remove('bg-gray-700','text-gray-400');
-            if (b.crazy) btn.classList.add('bg-black','text-white');
-            else         btn.classList.add('bg-[#39FF14]','text-black');
-        } else {
-            btn.classList.remove('bg-[#39FF14]','text-black','bg-black','text-white');
-            btn.classList.add('bg-gray-700','text-gray-400');
-        }
+        updatePurchaseButton(btn, ok, b.crazy ? ['bg-black', 'text-white'] : ['bg-[#39FF14]', 'text-black']);
     });
 
     clickUpgrades.forEach(u => {
-        const btn  = document.getElementById(`buy-upgrade-btn-${u.id}`);
+        const btn = document.getElementById(`buy-upgrade-btn-${u.id}`);
         const cont = document.getElementById(`upgrade-${u.id}`);
         if (!btn || !cont) return;
-        const ok = cheatMode || shora >= u.cost;
-        btn.disabled = !ok;
+        const ok = state.cheatMode || state.shora >= u.cost;
         cont.classList.toggle('opacity-50', !ok);
         cont.classList.toggle('grayscale', !ok);
-        if (ok) { btn.classList.remove('bg-gray-700','text-gray-400'); btn.classList.add('bg-[#FF00FF]','text-white'); }
-        else    { btn.classList.remove('bg-[#FF00FF]','text-white'); btn.classList.add('bg-gray-700','text-gray-400'); }
+        updatePurchaseButton(btn, ok, ['bg-[#FF00FF]', 'text-white']);
     });
 }
 
-// ===================== CLICK =====================
+function getEventPosition(event) {
+    const point = event.touches?.[0] ?? event;
+    return { x: point.clientX, y: point.clientY };
+}
+
 function handleClick(e) {
     e.preventDefault();
-    const gain = cheatMode ? 999999 : shoraPerClick * rebirthMultiplier;
-    if (!cheatMode) shora += gain;
-    const cx = e.touches ? e.touches[0].clientX : e.clientX;
-    const cy = e.touches ? e.touches[0].clientY : e.clientY;
-    spawnClickText(cx, cy, gain);
-    spawnMordechaiImg(cx, cy);
+    const gain = state.cheatMode ? 999999 : state.shoraPerClick * state.rebirthMultiplier;
+    if (!state.cheatMode) state.shora += gain;
+    const { x, y } = getEventPosition(e);
+    spawnClickText(x, y, gain);
+    spawnMordechaiImg(x, y);
     updateDisplay();
 }
-document.getElementById('mordechai-btn').addEventListener('mousedown',  handleClick);
-document.getElementById('mordechai-btn').addEventListener('touchstart', handleClick, { passive: false });
+
+elements.mordechaiBtn.addEventListener('mousedown', handleClick);
+elements.mordechaiBtn.addEventListener('touchstart', handleClick, { passive: false });
 
 function spawnClickText(x, y, gain) {
     const p = document.createElement('div');
     p.className = 'click-text';
-    p.innerText = `+${cheatMode ? '∞' : fmt(gain)}`;
-    p.style.left = `${x + (Math.random()-.5)*80}px`;
-    p.style.top  = `${y - 30 + (Math.random()-.5)*60}px`;
+    p.innerText = `+${state.cheatMode ? '∞' : formatNumber(gain)}`;
+    p.style.left = `${x + (Math.random() - 0.5) * 80}px`;
+    p.style.top = `${y - 30 + (Math.random() - 0.5) * 60}px`;
     document.body.appendChild(p);
     setTimeout(() => p.remove(), 800);
 }
+
 function spawnMordechaiImg(x, y) {
     const img = document.createElement('img');
     img.src = 'mordechai.png';
     img.className = 'click-img';
     img.onerror = () => img.remove();
-    img.style.left = `${x - 22 + (Math.random()-.5)*80}px`;
-    img.style.top  = `${y - 22 + (Math.random()-.5)*60}px`;
+    img.style.left = `${x - 22 + (Math.random() - 0.5) * 80}px`;
+    img.style.top = `${y - 22 + (Math.random() - 0.5) * 60}px`;
     document.body.appendChild(img);
     setTimeout(() => img.remove(), 1000);
 }
 
-// ===================== SHOP =====================
 function renderShop() {
-    const uc = document.getElementById('upgrades-container');
-    const bc = document.getElementById('buildings-container');
-    uc.innerHTML = ''; bc.innerHTML = '';
+    elements.upgradesContainer.innerHTML = '';
+    elements.buildingsContainer.innerHTML = '';
 
     clickUpgrades.forEach((u, i) => {
-        const d = document.createElement('div');
-        d.id = `upgrade-${u.id}`;
-        d.style.cssText = 'background:#222;border-radius:14px;padding:12px;display:flex;flex-direction:column;gap:8px;border:2px solid #FF00FF;transition:all 0.2s';
-        d.innerHTML = `
+        const card = document.createElement('div');
+        card.id = `upgrade-${u.id}`;
+        card.style.cssText = 'background:#222;border-radius:14px;padding:12px;display:flex;flex-direction:column;gap:8px;border:2px solid #FF00FF;transition:all 0.2s';
+        card.innerHTML = `
             <div style="display:flex;justify-content:space-between;align-items:flex-start">
                 <div>
                     <div style="font-size:1rem;font-weight:900;color:#fff">${u.name}</div>
                     <div style="font-size:0.8rem;font-weight:700;color:#FF00FF">+${u.boost} לקליק</div>
                 </div>
-                <div style="font-size:1.8rem;font-weight:900;color:#fff;background:rgba(0,0,0,0.5);border:2px solid #FF00FF;padding:2px 10px;border-radius:10px">${cheatMode ? '∞' : u.count}</div>
+                <div style="font-size:1.8rem;font-weight:900;color:#fff;background:rgba(0,0,0,0.5);border:2px solid #FF00FF;padding:2px 10px;border-radius:10px">${state.cheatMode ? '∞' : u.count}</div>
             </div>
             <div style="font-size:0.75rem;font-weight:700;color:#bbb;font-style:italic">"${u.desc}"</div>
             <button id="buy-upgrade-btn-${u.id}" onclick="buyClickUpgrade(${i})"
                 style="width:100%;padding:10px 12px;border-radius:10px;font-weight:900;font-family:'Comic Sans MS',sans-serif;font-size:0.85rem;display:flex;justify-content:space-between;align-items:center;border:none;cursor:pointer;text-transform:uppercase;touch-action:manipulation">
                 <span>קנה שדרוג קליק</span>
-                <span style="background:#000;color:#00FFFF;padding:3px 8px;border-radius:6px;border:1px solid #00FFFF" dir="ltr">${fmt(u.cost)} שורה</span>
+                <span style="background:#000;color:#00FFFF;padding:3px 8px;border-radius:6px;border:1px solid #00FFFF" dir="ltr">${formatNumber(u.cost)} שורה</span>
             </button>`;
-        uc.appendChild(d);
+        elements.upgradesContainer.appendChild(card);
     });
 
     buildings.forEach((b, i) => {
-        const d = document.createElement('div');
-        d.id = `building-${b.id}`;
-        if (b.crazy) d.className = 'crazy-upgrade';
-        d.style.cssText = 'background:#222;border-radius:14px;padding:12px;display:flex;flex-direction:column;gap:8px;border:2px solid #00FFFF;transition:all 0.2s';
-        d.innerHTML = `
+        const card = document.createElement('div');
+        card.id = `building-${b.id}`;
+        if (b.crazy) card.className = 'crazy-upgrade';
+        card.style.cssText = 'background:#222;border-radius:14px;padding:12px;display:flex;flex-direction:column;gap:8px;border:2px solid #00FFFF;transition:all 0.2s';
+        card.innerHTML = `
             <div style="display:flex;justify-content:space-between;align-items:flex-start">
                 <div style="max-width:70%">
                     <div style="font-size:1rem;font-weight:900${b.crazy ? '' : ';color:#fff'}" ${b.crazy ? 'class="crazy-text"' : ''}>${b.name}</div>
                     <div style="font-size:0.8rem;font-weight:700;color:#00FFFF">+${b.sps.toLocaleString('en-US')} שורה/שנייה</div>
                 </div>
-                <div style="font-size:1.8rem;font-weight:900;color:#fff;background:rgba(0,0,0,0.5);border:2px solid #fff;padding:2px 10px;border-radius:10px">${cheatMode ? '∞' : b.count}</div>
+                <div style="font-size:1.8rem;font-weight:900;color:#fff;background:rgba(0,0,0,0.5);border:2px solid #fff;padding:2px 10px;border-radius:10px">${state.cheatMode ? '∞' : b.count}</div>
             </div>
             <div style="font-size:0.75rem;font-weight:700;color:#bbb;font-style:italic">"${b.desc}"</div>
             <button id="buy-btn-${b.id}" onclick="buyBuilding(${i})"
                 style="width:100%;padding:10px 12px;border-radius:10px;font-weight:900;font-family:'Comic Sans MS',sans-serif;font-size:0.85rem;display:flex;justify-content:space-between;align-items:center;border:none;cursor:pointer;text-transform:uppercase;touch-action:manipulation">
                 <span>קנה שורה פארם</span>
-                <span style="background:#000;color:#FF00FF;padding:3px 8px;border-radius:6px;border:1px solid #FF00FF" dir="ltr">${fmt(b.cost)} שורה</span>
+                <span style="background:#000;color:#FF00FF;padding:3px 8px;border-radius:6px;border:1px solid #FF00FF" dir="ltr">${formatNumber(b.cost)} שורה</span>
             </button>`;
-        bc.appendChild(d);
+        elements.buildingsContainer.appendChild(card);
     });
 
     renderRebirthHistory();
 }
 
 function renderRebirthHistory() {
-    const sec  = document.getElementById('rebirth-history-section');
-    const list = document.getElementById('rebirth-history-list');
-    if (!rebirthHistory.length) { sec.style.display = 'none'; return; }
-    sec.style.display = 'block';
-    list.innerHTML = '';
-    rebirthHistory.slice().reverse().forEach(e => {
-        const el = document.createElement('div');
-        el.style.cssText = 'background:#1a1400;border:1px solid rgba(255,215,0,0.4);border-radius:10px;padding:10px;font-size:0.8rem;color:#FFD700';
-        el.innerHTML = `<span style="font-weight:900">Rebirth #${e.prestige}</span>
-            <span style="color:rgba(255,255,255,0.5);margin-right:6px"> — ${e.totalShora.toLocaleString('en-US')} שורה collected</span>
-            <span style="color:#FF8C00">×${e.multiplierAfter.toFixed(2)} bonus</span>`;
-        list.appendChild(el);
+    if (!state.rebirthHistory.length) {
+        elements.rebirthHistorySection.style.display = 'none';
+        return;
+    }
+    elements.rebirthHistorySection.style.display = 'block';
+    elements.rebirthHistoryList.innerHTML = '';
+    state.rebirthHistory.slice().reverse().forEach(entry => {
+        const item = document.createElement('div');
+        item.style.cssText = 'background:#1a1400;border:1px solid rgba(255,215,0,0.4);border-radius:10px;padding:10px;font-size:0.8rem;color:#FFD700';
+        item.innerHTML = `<span style="font-weight:900">Rebirth #${entry.prestige}</span>
+            <span style="color:rgba(255,255,255,0.5);margin-right:6px"> — ${entry.totalShora.toLocaleString('en-US')} שורה collected</span>
+            <span style="color:#FF8C00">×${entry.multiplierAfter.toFixed(2)} bonus</span>`;
+        elements.rebirthHistoryList.appendChild(item);
     });
 }
 
-// ===================== BUY =====================
-window.buyClickUpgrade = function(i) {
-    const u = clickUpgrades[i];
-    if (!cheatMode && shora < u.cost) return;
-    if (!cheatMode) shora -= u.cost;
-    u.count++;
-    u.cost = u.baseCost * Math.pow(1.5, u.count);
-    calculateSPS(); renderShop(); updateDisplay();
+window.buyClickUpgrade = function(index) {
+    const upgrade = clickUpgrades[index];
+    if (!state.cheatMode && state.shora < upgrade.cost) return;
+    if (!state.cheatMode) state.shora -= upgrade.cost;
+    upgrade.count += 1;
+    upgrade.cost = upgrade.baseCost * Math.pow(1.5, upgrade.count);
+    calculateSPS();
+    renderShop();
+    updateDisplay();
 };
-window.buyBuilding = function(i) {
-    const b = buildings[i];
-    if (!cheatMode && shora < b.cost) return;
-    if (!cheatMode) shora -= b.cost;
-    b.count++;
-    b.cost = b.baseCost * Math.pow(1.15, b.count);
-    calculateSPS(); renderShop(); updateDisplay();
-    if (b.crazy) {
+
+window.buyBuilding = function(index) {
+    const building = buildings[index];
+    if (!state.cheatMode && state.shora < building.cost) return;
+    if (!state.cheatMode) state.shora -= building.cost;
+    building.count += 1;
+    building.cost = building.baseCost * Math.pow(1.15, building.count);
+    calculateSPS();
+    renderShop();
+    updateDisplay();
+    if (building.crazy) {
         document.body.style.animation = 'epilepsyBg 0.1s infinite alternate';
         setTimeout(() => { document.body.style.animation = 'brainrotBg 5s ease infinite'; }, 1000);
     }
 };
 
-// ===================== REBIRTH =====================
 function openRebirthModal() {
-    if (!cheatMode && shora < getRebirthThreshold()) return;
+    if (!state.cheatMode && state.shora < getRebirthThreshold()) return;
     const next = getNextMultiplier();
-    document.getElementById('rebirth-modal-text').innerHTML =
+    elements.rebirthModalText.innerHTML =
         `You lose all your שורה, farms, and upgrades...<br>
          <span style="color:#FFD700;font-size:1.4rem;font-weight:900">But you get a ×${next.toFixed(2)} permanent bonus to everything!</span><br>
          <small style="color:#aaa">(Multiplies clicks, SPS — everything!)</small>`;
-    document.getElementById('rebirth-modal-current').innerHTML =
-        `Rebirth <strong style="color:#FFD700">#${prestigeCount + 1}</strong> — you currently have ${cheatMode ? '∞' : fmt(shora)} שורה`;
-    document.getElementById('rebirth-modal').classList.add('show');
+    elements.rebirthModalCurrent.innerHTML =
+        `Rebirth <strong style="color:#FFD700">#${state.prestigeCount + 1}</strong> — you currently have ${state.cheatMode ? '∞' : formatNumber(state.shora)} שורה`;
+    elements.rebirthModal.classList.add('show');
 }
-function closeRebirthModal() { document.getElementById('rebirth-modal').classList.remove('show'); }
+
+function closeRebirthModal() {
+    elements.rebirthModal.classList.remove('show');
+}
+
 function confirmRebirth() {
     closeRebirthModal();
-    rebirthHistory.push({ prestige: prestigeCount + 1, totalShora: Math.floor(shora), multiplierAfter: getNextMultiplier() });
-    prestigeCount++;
-    rebirthMultiplier = parseFloat(Math.pow(1.25, prestigeCount).toFixed(4));
-    shora = 0;
+    state.rebirthHistory.push({
+        prestige: state.prestigeCount + 1,
+        totalShora: Math.floor(state.shora),
+        multiplierAfter: getNextMultiplier(),
+    });
+    state.prestigeCount += 1;
+    state.rebirthMultiplier = parseFloat(Math.pow(1.25, state.prestigeCount).toFixed(4));
+    state.shora = 0;
     buildings.forEach(b => { b.count = 0; b.cost = b.baseCost; });
     clickUpgrades.forEach(u => { u.count = 0; u.cost = u.baseCost; });
-    calculateSPS(); renderShop(); updateDisplay(); saveGame();
-    const f = document.getElementById('rebirth-flash');
-    f.style.display = 'block';
-    setTimeout(() => { f.style.display = 'none'; }, 1200);
+    calculateSPS();
+    renderShop();
+    updateDisplay();
+    saveGame();
+    elements.rebirthFlash.style.display = 'block';
+    setTimeout(() => { elements.rebirthFlash.style.display = 'none'; }, 1200);
 }
 
-// ===================== FULL RESET =====================
-function openResetModal()  { document.getElementById('reset-modal').classList.add('show'); }
-function closeResetModal() { document.getElementById('reset-modal').classList.remove('show'); }
+function openResetModal() {
+    elements.resetModal.classList.add('show');
+}
+
+function closeResetModal() {
+    elements.resetModal.classList.remove('show');
+}
+
 function confirmFullReset() {
     closeResetModal();
-    // Wipe everything including cheat
-    localStorage.removeItem('mordechaiSaveV3');
-    localStorage.removeItem('_mc');
-    cheatMode = false;
-    shora = 0; prestigeCount = 0; rebirthMultiplier = 1; rebirthHistory = [];
+    localStorage.removeItem(STORAGE_KEY);
+    localStorage.removeItem(CHEAT_STORAGE_KEY);
+    state.cheatMode = false;
+    state.shora = 0;
+    state.prestigeCount = 0;
+    state.rebirthMultiplier = 1;
+    state.rebirthHistory = [];
     buildings.forEach(b => { b.count = 0; b.cost = b.baseCost; });
     clickUpgrades.forEach(u => { u.count = 0; u.cost = u.baseCost; });
-    calculateSPS(); renderShop(); updateDisplay();
+    calculateSPS();
+    renderShop();
+    updateDisplay();
 }
 
-// ===================== CALC =====================
 function calculateSPS() {
-    shoraPerSecond = buildings.reduce((s, b) => s + b.sps * b.count, 0);
-    shoraPerClick  = 1 + clickUpgrades.reduce((s, u) => s + u.boost * u.count, 0);
+    state.shoraPerSecond = buildings.reduce((sum, b) => sum + b.sps * b.count, 0);
+    state.shoraPerClick = 1 + clickUpgrades.reduce((sum, u) => sum + u.boost * u.count, 0);
 }
 
-// ===================== SAVE / LOAD =====================
 function saveGame() {
-    localStorage.setItem('mordechaiSaveV3', JSON.stringify({
-        shora, prestigeCount, rebirthMultiplier, rebirthHistory,
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({
+        shora: state.shora,
+        prestigeCount: state.prestigeCount,
+        rebirthMultiplier: state.rebirthMultiplier,
+        rebirthHistory: state.rebirthHistory,
         buildingsCount: buildings.map(b => b.count),
         upgradesCount: clickUpgrades.map(u => u.count),
-        cheatMode
+        cheatMode: state.cheatMode,
     }));
 }
+
 function loadGame() {
-    if (localStorage.getItem('_mc') === '1') cheatMode = true;
-    const raw = localStorage.getItem('mordechaiSaveV3');
-    if (raw) {
-        try {
-            const s = JSON.parse(raw);
-            if (s.cheatMode) {
-                // Was saved in cheat mode — load cheat state but DON'T restore inflated numbers
-                // Just keep zeros and mark cheat on so UI works
-                cheatMode = true;
-            } else {
-                shora             = s.shora || 0;
-                prestigeCount     = s.prestigeCount || 0;
-                rebirthMultiplier = s.rebirthMultiplier || 1;
-                rebirthHistory    = s.rebirthHistory || [];
-                if (s.buildingsCount?.length === buildings.length)
-                    buildings.forEach((b,i) => { b.count = s.buildingsCount[i]; b.cost = b.baseCost * Math.pow(1.15, b.count); });
-                if (s.upgradesCount?.length === clickUpgrades.length)
-                    clickUpgrades.forEach((u,i) => { u.count = s.upgradesCount[i]; u.cost = u.baseCost * Math.pow(1.5, u.count); });
-            }
-            calculateSPS();
-        } catch(e) { /* silent */ }
+    if (localStorage.getItem(CHEAT_STORAGE_KEY) === '1') {
+        state.cheatMode = true;
     }
-    // Re-inflate if cheat is on
-    if (cheatMode) {
-        shora = 1e15; rebirthMultiplier = 999999; prestigeCount = 999;
+
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) {
+        calculateSPS();
+        return;
+    }
+
+    try {
+        const data = JSON.parse(raw);
+        if (data.cheatMode) {
+            state.cheatMode = true;
+        } else {
+            state.shora = data.shora || 0;
+            state.prestigeCount = data.prestigeCount || 0;
+            state.rebirthMultiplier = data.rebirthMultiplier || 1;
+            state.rebirthHistory = data.rebirthHistory || [];
+            if (Array.isArray(data.buildingsCount) && data.buildingsCount.length === buildings.length) {
+                buildings.forEach((b, index) => {
+                    b.count = data.buildingsCount[index];
+                    b.cost = b.baseCost * Math.pow(1.15, b.count);
+                });
+            }
+            if (Array.isArray(data.upgradesCount) && data.upgradesCount.length === clickUpgrades.length) {
+                clickUpgrades.forEach((u, index) => {
+                    u.count = data.upgradesCount[index];
+                    u.cost = u.baseCost * Math.pow(1.5, u.count);
+                });
+            }
+        }
+    } catch (error) {
+        console.warn('Failed to load save file:', error);
+    }
+
+    if (state.cheatMode) {
+        state.shora = 1e15;
+        state.rebirthMultiplier = 999999;
+        state.prestigeCount = 999;
         buildings.forEach(b => { b.count = 9999; b.cost = 0; });
         clickUpgrades.forEach(u => { u.count = 9999; u.cost = 0; });
-        calculateSPS();
     }
+
+    calculateSPS();
+}
+
+function initGame() {
+    loadGame();
+    loadLeaderboard();
+    renderShop();
+    updateDisplay();
+    setInterval(() => {
+        if (!state.cheatMode) {
+            state.shora += (state.shoraPerSecond / 10) * state.rebirthMultiplier;
+        }
+        updateDisplay();
+    }, 100);
+    setInterval(saveGame, 5000);
 }
 
 initGame();
