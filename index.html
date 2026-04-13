@@ -304,10 +304,9 @@
                 <h3 style="font-size:1.1rem;font-weight:900;color:#FFFFFF;border-bottom:2px solid #FFFFFF;padding-bottom:4px;margin-bottom:10px;text-transform:uppercase">Leaderboard</h3>
                 <div style="display:flex;flex-direction:column;gap:10px;padding:12px;background:#111;border:2px solid #fff;border-radius:16px">
                     <div style="display:flex;gap:8px;flex-wrap:wrap">
-                        <input id="leaderboard-name-input" type="text" placeholder="Name" maxlength="20" style="flex:1;min-width:120px;padding:10px;border-radius:12px;border:2px solid #555;background:#000;color:#fff;font-weight:700;font-family:'Comic Sans MS',sans-serif" />
-                        <button id="leaderboard-submit-btn" onclick="submitLeaderboardScore()" style="padding:10px 14px;border-radius:12px;border:none;background:#39FF14;color:#000;font-weight:900;cursor:pointer;font-family:'Comic Sans MS',sans-serif">Submit Score</button>
+                        <input id="leaderboard-name-input" type="text" placeholder="Enter your name" maxlength="20" style="flex:1;min-width:120px;padding:10px;border-radius:12px;border:2px solid #555;background:#000;color:#fff;font-weight:700;font-family:'Comic Sans MS',sans-serif" />
                     </div>
-                    <div style="font-size:0.85rem;color:#aaa">Scores use your current שורה total. The leaderboard is loaded from <code>leaderboard.json</code> and keeps previous entries in the repo.</div>
+                    <div style="font-size:0.85rem;color:#aaa">Just enter your name and the leaderboard updates automatically based on your 최고 rebirth count and שורה score.</div>
                     <div id="leaderboard-list" style="display:flex;flex-direction:column;gap:6px"></div>
                 </div>
             </div>
@@ -332,6 +331,7 @@ const state = {
     rebirthHistory: [],
     cheatMode: false,
     leaderboard: [],
+    localLeaderboard: [],
 };
 
 const elements = {
@@ -353,7 +353,6 @@ const elements = {
     rebirthHistorySection: document.getElementById('rebirth-history-section'),
     rebirthHistoryList: document.getElementById('rebirth-history-list'),
     leaderboardNameInput: document.getElementById('leaderboard-name-input'),
-    leaderboardSubmitBtn: document.getElementById('leaderboard-submit-btn'),
     leaderboardList: document.getElementById('leaderboard-list'),
     mordechaiBtn: document.getElementById('mordechai-btn'),
 };
@@ -382,15 +381,26 @@ function mergeLeaderboardEntries(base, extra) {
     extra.forEach(entry => {
         const existing = combined.find(item => item.name.toLowerCase() === entry.name.toLowerCase());
         if (existing) {
-            if (entry.score > existing.score) {
+            const betterRebirth = entry.rebirths > existing.rebirths;
+            const equalRebirthBetterScore = entry.rebirths === existing.rebirths && entry.score > existing.score;
+            if (betterRebirth || equalRebirthBetterScore) {
+                existing.rebirths = entry.rebirths;
                 existing.score = entry.score;
                 existing.date = entry.date || existing.date;
             }
         } else {
-            combined.push({ name: entry.name, score: entry.score, date: entry.date || new Date().toISOString().slice(0, 10) });
+            combined.push({
+                name: entry.name,
+                rebirths: entry.rebirths,
+                score: entry.score,
+                date: entry.date || new Date().toISOString().slice(0, 10),
+            });
         }
     });
-    return combined.sort((a, b) => b.score - a.score).slice(0, 10);
+    return combined.sort((a, b) => {
+        if (b.rebirths !== a.rebirths) return b.rebirths - a.rebirths;
+        return b.score - a.score;
+    }).slice(0, 10);
 }
 
 function getStoredPlayerName() {
@@ -402,15 +412,15 @@ function setStoredPlayerName(name) {
 }
 
 function loadLeaderboard() {
-    const localData = JSON.parse(localStorage.getItem(LEADERBOARD_LOCAL_KEY) || '[]');
+    state.localLeaderboard = JSON.parse(localStorage.getItem(LEADERBOARD_LOCAL_KEY) || '[]');
     fetch(LEADERBOARD_FILE)
         .then(response => response.ok ? response.json() : [])
         .then(remoteEntries => {
-            state.leaderboard = mergeLeaderboardEntries(remoteEntries || [], localData || []);
+            state.leaderboard = mergeLeaderboardEntries(remoteEntries || [], state.localLeaderboard || []);
             renderLeaderboard();
         })
         .catch(() => {
-            state.leaderboard = mergeLeaderboardEntries([], localData || []);
+            state.leaderboard = mergeLeaderboardEntries([], state.localLeaderboard || []);
             renderLeaderboard();
         });
     elements.leaderboardNameInput.value = getStoredPlayerName();
@@ -418,6 +428,7 @@ function loadLeaderboard() {
 
 function saveLeaderboardLocal(entries) {
     localStorage.setItem(LEADERBOARD_LOCAL_KEY, JSON.stringify(entries));
+    state.localLeaderboard = entries;
 }
 
 function renderLeaderboard() {
@@ -429,26 +440,40 @@ function renderLeaderboard() {
     state.leaderboard.slice(0, 10).forEach((entry, index) => {
         const row = document.createElement('div');
         row.style.cssText = 'display:flex;justify-content:space-between;gap:8px;padding:8px 10px;border-radius:10px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.08);font-size:0.95rem;color:#fff';
-        row.innerHTML = `<span style="font-weight:900">#${index + 1} ${entry.name}</span><span>${formatNumber(entry.score)} שורה</span>`;
+        row.innerHTML = `<span style="font-weight:900">#${index + 1} ${entry.name}</span><span>Rebirths: ${entry.rebirths} | ${formatNumber(entry.score)} שורה</span>`;
         elements.leaderboardList.appendChild(row);
     });
 }
 
-function submitLeaderboardScore() {
+function updatePlayerLeaderboard() {
     const rawName = elements.leaderboardNameInput.value.trim().slice(0, 20);
     const name = rawName || 'Anonymous';
     const score = Math.floor(state.shora);
-    if (score <= 0) {
-        alert('Score must be greater than 0 to submit.');
-        return;
+    const rebirths = state.prestigeCount;
+    if (score < 0) return;
+
+    const newEntry = { name, rebirths, score, date: new Date().toISOString().slice(0, 10) };
+    const localData = [...state.localLeaderboard];
+    const existing = localData.find(item => item.name.toLowerCase() === name.toLowerCase());
+    if (existing) {
+        const betterRebirth = newEntry.rebirths > existing.rebirths;
+        const equalRebirthBetterScore = newEntry.rebirths === existing.rebirths && newEntry.score > existing.score;
+        if (!betterRebirth && !equalRebirthBetterScore) return;
+        existing.rebirths = Math.max(existing.rebirths, newEntry.rebirths);
+        existing.score = Math.max(existing.score, newEntry.score);
+        existing.date = newEntry.date;
+    } else {
+        localData.push(newEntry);
     }
-    setStoredPlayerName(name);
-    const localData = JSON.parse(localStorage.getItem(LEADERBOARD_LOCAL_KEY) || '[]');
-    const updated = mergeLeaderboardEntries(localData, [{ name, score, date: new Date().toISOString().slice(0, 10) }]);
-    saveLeaderboardLocal(updated);
-    state.leaderboard = mergeLeaderboardEntries(state.leaderboard, updated);
+    saveLeaderboardLocal(localData);
+    state.leaderboard = mergeLeaderboardEntries(state.leaderboard, [newEntry]);
     renderLeaderboard();
-    alert(`Score submitted for ${name}!`);
+}
+
+function handleNameInputChange() {
+    const name = elements.leaderboardNameInput.value.trim().slice(0, 20);
+    if (name) setStoredPlayerName(name);
+    updatePlayerLeaderboard();
 }
 
 function setCheatMode(enabled) {
@@ -800,11 +825,14 @@ function initGame() {
     loadLeaderboard();
     renderShop();
     updateDisplay();
+    elements.leaderboardNameInput.addEventListener('blur', handleNameInputChange);
+    elements.leaderboardNameInput.addEventListener('change', handleNameInputChange);
     setInterval(() => {
         if (!state.cheatMode) {
             state.shora += (state.shoraPerSecond / 10) * state.rebirthMultiplier;
         }
         updateDisplay();
+        updatePlayerLeaderboard();
     }, 100);
     setInterval(saveGame, 5000);
 }
