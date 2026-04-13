@@ -333,6 +333,7 @@ const state = {
     leaderboard: [],
     localLeaderboard: [],
     currentPlayerName: '',
+    lastPlayerName: '',
     leaderboardUpdateTimer: null,
 };
 
@@ -478,8 +479,23 @@ function handleNameInputChange() {
     if (rawName) setStoredPlayerName(rawName);
     clearTimeout(state.leaderboardUpdateTimer);
     state.leaderboardUpdateTimer = setTimeout(() => {
-        state.currentPlayerName = rawName;
-        if (rawName) updatePlayerLeaderboard();
+        const newName = rawName;
+        const oldName = state.currentPlayerName;
+        
+        // If name changed and old name exists in leaderboard, rename the entry
+        if (newName && oldName && newName.toLowerCase() !== oldName.toLowerCase()) {
+            const localData = [...state.localLeaderboard];
+            const oldEntry = localData.find(item => item.name.toLowerCase() === oldName.toLowerCase());
+            if (oldEntry) {
+                oldEntry.name = newName;
+                saveLeaderboardLocal(localData);
+            }
+            state.leaderboard = mergeLeaderboardEntries(state.leaderboard, []);
+            renderLeaderboard();
+        }
+        
+        state.currentPlayerName = newName;
+        if (newName) updatePlayerLeaderboard();
     }, 600);
 }
 
