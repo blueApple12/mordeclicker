@@ -255,7 +255,7 @@
         <!-- Top button row -->
         <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:center;margin-bottom:8px">
             <span id="prestige-badge-display" class="prestige-badge" style="display:none">★ <span id="prestige-count-display">0</span></span>
-            <button id="rebirth-btn" onclick="openRebirthModal()" class="disabled">🌟 Rebirth</button>
+            <button id="rebirth-btn" onclick="openRebirthModal()" class="disabled">🌟 גבינה</button>
             <span id="rebirth-requirement-text" style="font-size:0.8rem;color:rgba(255,255,255,0.7);font-weight:bold"></span>
             <button id="reset-btn" onclick="openResetModal()">🗑 Reset</button>
         </div>
@@ -297,7 +297,7 @@
                 <div id="buildings-container" style="display:flex;flex-direction:column;gap:10px"></div>
             </div>
             <div id="rebirth-history-section" style="display:none;margin-bottom:1.5rem">
-                <h3 style="font-size:1.1rem;font-weight:900;color:#FFD700;border-bottom:2px solid #FFD700;padding-bottom:4px;margin-bottom:10px;text-transform:uppercase">Rebirth History</h3>
+                <h3 style="font-size:1.1rem;font-weight:900;color:#FFD700;border-bottom:2px solid #FFD700;padding-bottom:4px;margin-bottom:10px;text-transform:uppercase">היסטוריית גבינה</h3>
                 <div id="rebirth-history-list" style="display:flex;flex-direction:column;gap:8px"></div>
             </div>
 
@@ -344,7 +344,9 @@ const elements = {
 const clickUpgrades = [
     { id:'cheap_mouse', name:'real stats', baseCost:50, cost:50, boost:1, count:0, desc:'הפעם הנתונים אמיתיים לא כמו ה-fake stats (+1 לקליק).' },
     { id:'speedrunner', name:'המונסטר של רגב', baseCost:500, cost:500, boost:10, count:0, desc:'שותה מונסטר ולוחץ כמו משוגע (+10 לקליק).' },
-    { id:'sigma_glove', name:'ניר בנדה', baseCost:5000, cost:5000, boost:100, count:0, desc:'הכל עובר ל7 (+100 לקליק).' }
+    { id:'sigma_glove', name:'ניר בנדה', baseCost:5000, cost:5000, boost:100, count:0, desc:'הכל עובר ל7 (+100 לקליק).' },
+    { id:'chemists_talk', name:'איכ כימאים', baseCost:5353, cost:5353, boost:53, count:0, minRebirth:1, desc:'לא ניתן ביד לעדיקטטורה. תחשבו על זההההההההההההההה.' },
+    { id:'mordechigh_iq', name:'an iq too mordechigh', baseCost:25000, cost:25000, boost:250, count:0, minRebirth:2, desc:'גז, אני יוני, נהדר (<strong>הדר</strong>), דור בן דוד, אלבניה.' }
 ];
 
 const buildings = [
@@ -352,7 +354,11 @@ const buildings = [
     { id:'aviv_cenzor', name:'אביב צנזור', baseCost:100, cost:100, sps:5, count:0, desc:'תהי פונקציית שורה f(x). נוכיח באינדוקציה שמרדכי חסום.', crazy:false },
     { id:'door', name:'דלת', baseCost:1100, cost:1100, sps:50, count:0, desc:'פשוט דלת. לא צריך להסביר יותר.', crazy:false },
     { id:'mordemet', name:'מרדמת', baseCost:12000, cost:12000, sps:400, count:0, desc:'מרדכי ישן? או שמא הוא מת? העיקר שמייצר שורה.', crazy:false },
-    { id:'who_is', name:'מי זה מרדכי?!?!?!?!?!?!?', baseCost:100000, cost:100000, sps:5000, count:0, desc:'קריסה מוחלטת של משוואות דיפרנציאליות לתוך חור שחור של שורה.', crazy:true }
+    { id:'dganit', name:'צדיקות של דגנית', baseCost:220000, cost:220000, sps:2500, count:0, minRebirth:2, desc:'דגנית תמיד צודקת. לא ניתן ביד לעדיקטטורה. 53 53 53 53 53 53 53 53 53.', crazy:false },
+    { id:'gingichi', name:'גינגיכי', baseCost:30000, cost:30000, sps:3, count:0, minRebirth:1, desc:'גינגיכי (מביא הכי קצת). מפגרי העבר, טרנננננננננננננננננזיטיביות.', crazy:false },
+    { id:'pi_tost', name:'צבא פאי טוסט', baseCost:450000, cost:450000, sps:9000, count:0, minRebirth:3, desc:'לכובע שלי שש פאי טוסט. דור בן דוד, אלבניה, an iq too mordechigh.', crazy:false },
+    { id:'nir_end', name:'the end is nir', baseCost:1500000, cost:1500000, sps:35000, count:0, minRebirth:5, desc:'im inevitable. נפסלתי. בום בום רציני.', crazy:true },
+    { id:'who_is', name:'מי זה מרדכי?!?!?!?!?!?!?', baseCost:9999999999, cost:9999999999, sps:5000, count:0, minRebirth:6, desc:'קריסה מוחלטת של משוואות דיפרנציאליות לתוך חור שחור של שורה.', crazy:true }
 ];
 
 const formatNumber = n => Math.floor(n).toLocaleString(LOCALE);
@@ -425,14 +431,15 @@ function updateDisplay() {
     const canRebirth = state.cheatMode || state.shora >= threshold;
     elements.rebirthBtn.classList.toggle('disabled', !canRebirth);
     elements.rebirthRequirementText.innerText = canRebirth
-        ? '✅ Ready!'
-        : `Need ${formatNumber(threshold)} שורה`;
+        ? '✅ מוכנה לקבל גבינה!'
+        : `Need ${formatNumber(threshold)} שורה for גבינה`;
 
     buildings.forEach(b => {
         const btn = document.getElementById(`buy-btn-${b.id}`);
         const cont = document.getElementById(`building-${b.id}`);
         if (!btn || !cont) return;
-        const ok = state.cheatMode || state.shora >= b.cost;
+        const unlocked = !b.minRebirth || state.prestigeCount >= b.minRebirth;
+        const ok = state.cheatMode || (unlocked && state.shora >= b.cost);
         cont.classList.toggle('opacity-50', !ok);
         cont.classList.toggle('grayscale', !ok);
         updatePurchaseButton(btn, ok, b.crazy ? ['bg-black', 'text-white'] : ['bg-[#39FF14]', 'text-black']);
@@ -442,7 +449,8 @@ function updateDisplay() {
         const btn = document.getElementById(`buy-upgrade-btn-${u.id}`);
         const cont = document.getElementById(`upgrade-${u.id}`);
         if (!btn || !cont) return;
-        const ok = state.cheatMode || state.shora >= u.cost;
+        const unlocked = !u.minRebirth || state.prestigeCount >= u.minRebirth;
+        const ok = state.cheatMode || (unlocked && state.shora >= u.cost);
         cont.classList.toggle('opacity-50', !ok);
         cont.classList.toggle('grayscale', !ok);
         updatePurchaseButton(btn, ok, ['bg-[#FF00FF]', 'text-white']);
@@ -496,6 +504,9 @@ function renderShop() {
         const card = document.createElement('div');
         card.id = `upgrade-${u.id}`;
         card.style.cssText = 'background:#222;border-radius:14px;padding:12px;display:flex;flex-direction:column;gap:8px;border:2px solid #FF00FF;transition:all 0.2s';
+        const lockNote = u.minRebirth && state.prestigeCount < u.minRebirth
+            ? `<div style="color:#ff5555;font-size:0.8rem;font-weight:900">צריך ${u.minRebirth} גבינות כדי לפתוח</div>`
+            : '';
         card.innerHTML = `
             <div style="display:flex;justify-content:space-between;align-items:flex-start">
                 <div>
@@ -505,6 +516,7 @@ function renderShop() {
                 <div style="font-size:1.8rem;font-weight:900;color:#fff;background:rgba(0,0,0,0.5);border:2px solid #FF00FF;padding:2px 10px;border-radius:10px">${state.cheatMode ? '∞' : u.count}</div>
             </div>
             <div style="font-size:0.75rem;font-weight:700;color:#bbb;font-style:italic">"${u.desc}"</div>
+            ${lockNote}
             <button id="buy-upgrade-btn-${u.id}" onclick="buyClickUpgrade(${i})"
                 style="width:100%;padding:10px 12px;border-radius:10px;font-weight:900;font-family:'Comic Sans MS',sans-serif;font-size:0.85rem;display:flex;justify-content:space-between;align-items:center;border:none;cursor:pointer;text-transform:uppercase;touch-action:manipulation">
                 <span>קנה שדרוג קליק</span>
@@ -518,6 +530,9 @@ function renderShop() {
         card.id = `building-${b.id}`;
         if (b.crazy) card.className = 'crazy-upgrade';
         card.style.cssText = 'background:#222;border-radius:14px;padding:12px;display:flex;flex-direction:column;gap:8px;border:2px solid #00FFFF;transition:all 0.2s';
+        const lockNote = b.minRebirth && state.prestigeCount < b.minRebirth
+            ? `<div style="color:#ff5555;font-size:0.8rem;font-weight:900">צריך ${b.minRebirth} גבינות כדי לפתוח</div>`
+            : '';
         card.innerHTML = `
             <div style="display:flex;justify-content:space-between;align-items:flex-start">
                 <div style="max-width:70%">
@@ -527,6 +542,7 @@ function renderShop() {
                 <div style="font-size:1.8rem;font-weight:900;color:#fff;background:rgba(0,0,0,0.5);border:2px solid #fff;padding:2px 10px;border-radius:10px">${state.cheatMode ? '∞' : b.count}</div>
             </div>
             <div style="font-size:0.75rem;font-weight:700;color:#bbb;font-style:italic">"${b.desc}"</div>
+            ${lockNote}
             <button id="buy-btn-${b.id}" onclick="buyBuilding(${i})"
                 style="width:100%;padding:10px 12px;border-radius:10px;font-weight:900;font-family:'Comic Sans MS',sans-serif;font-size:0.85rem;display:flex;justify-content:space-between;align-items:center;border:none;cursor:pointer;text-transform:uppercase;touch-action:manipulation">
                 <span>קנה שורה פארם</span>
